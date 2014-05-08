@@ -2224,6 +2224,25 @@ static void traverse_face_boundary (FttCell * cell, gpointer * datum)
   face.d = *d;
   face.cell = cell;
   face.neighbor = ftt_cell_neighbor (cell, face.d);
+
+  printf("Direction 'd' = %d\n",face.d); 
+  if (face.d == FTT_RIGHT) {
+    face.leftneighbor = ftt_cell_neighbor(cell, 2);
+    face.rightneighbor = ftt_cell_neighbor(cell, 3);
+  }
+  else if (face.d == FTT_LEFT) {
+    face.leftneighbor = ftt_cell_neighbor(cell, 3);
+    face.rightneighbor = ftt_cell_neighbor(cell, 2);
+  }
+  else if (face.d == FTT_TOP) {
+    face.leftneighbor = ftt_cell_neighbor(cell, 1);
+    face.rightneighbor = ftt_cell_neighbor(cell, 0);
+  }
+  else if (face.d == FTT_BOTTOM) {
+    face.leftneighbor = ftt_cell_neighbor(cell, 0);
+    face.rightneighbor = ftt_cell_neighbor(cell, 1);
+  }
+
   (* func) (&face, data);
 }
 

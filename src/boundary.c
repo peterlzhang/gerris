@@ -256,7 +256,8 @@ static void dirichlet (FttCellFace * f, GfsBc * b) // FttCellFace structure stor
   GFS_VALUE (f->cell, b->v) = 
     2.*gfs_function_face_value (GFS_BC_VALUE (b)->val, f)
     - GFS_VALUE (f->neighbor, b->v);
-  printf("Dirichlet called %d,\n",count);
+//  printf("Dirichlet called %d,\n",count);
+  printf("Dirichlet count = %d, val at interior point = %f\n",count,GFS_VALUE (f->neighbor, b->v));
 }
 
 static void dirichlet_vof (FttCellFace * f, GfsBc * b)
@@ -464,12 +465,31 @@ GfsBcClass * gfs_bc_angle_class (void)
  */
 
 static void navier (FttCellFace * f, GfsBc * b)
-{
+{ static int count = 0;
+  count += 1;
+  printf("Navier BC called %d\n",count);
+
   gdouble h = ftt_cell_size (f->cell);
   gdouble lambda = gfs_function_face_value (GFS_BC_NAVIER (b)->lambda, f);
+// Navier Boundary condition
   GFS_VALUE (f->cell, b->v) = 
     (2.*gfs_function_face_value (GFS_BC_VALUE (b)->val, f)*h
-     - (h - 2.*lambda)*GFS_VALUE (f->neighbor, b->v))/(h + 2.*lambda);
+     - (h - 2.*lambda)*GFS_VALUE (f->neighbor, b->v))/(h + 2.*lambda); 
+
+// Josephs new BC
+    /*
+  if (!f->leftneighbor) {
+    printf("No left neighbor\n");
+  }
+  else if (!f-> rightneighbor) {
+    printf("No right neighbor\n");
+  }
+  else {
+
+  GFS_VALUE (f->cell, b->v) = 
+  }
+*/
+
 }
 
 static void face_navier (FttCellFace * f, GfsBc * b)

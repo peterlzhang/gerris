@@ -42,7 +42,7 @@
 FttCellFace gfs_cell_face (FttCell * cell,
 			   FttDirection d)
 {
-  FttCellFace f = {cell, NULL, d};
+  FttCellFace f = {cell, NULL, NULL, NULL, d};
 
   g_return_val_if_fail (cell != NULL, f);
 

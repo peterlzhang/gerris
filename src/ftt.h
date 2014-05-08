@@ -159,7 +159,7 @@ struct _FttOct {
 };
 
 struct _FttCellFace {
-  FttCell * cell, * neighbor;
+  FttCell * cell, * neighbor, * leftneighbor, * rightneighbor;
   FttDirection d;
 };
 
