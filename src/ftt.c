@@ -367,6 +367,17 @@ void ftt_cell_pos (const FttCell * cell,
 }
 
 /**
+ * ftt_interior_value
+
+  */
+/*
+void ftt_interior_value (const FttCellFace * f, FttVector * pos)
+{
+  ftt_cell_pos(f->neighbor, pos );
+  printf("Position of first interior cell is (%f,%f,%f)\n",pos->x,pos->y,pos->z);
+}
+*/
+/**
  * ftt_corner_relative_pos:
  * @cell: a #FttCell.
  * @d: a set of perpendicular directions.
@@ -2225,27 +2236,45 @@ static void traverse_face_boundary (FttCell * cell, gpointer * datum)
   face.cell = cell;
   face.neighbor = ftt_cell_neighbor (cell, face.d);
 
-  printf("Direction 'd' = %d\n",face.d); 
-  if (face.d == FTT_RIGHT) {
-    face.leftneighbor = ftt_cell_neighbor(cell, 2);
-    face.rightneighbor = ftt_cell_neighbor(cell, 3);
-  }
-  else if (face.d == FTT_LEFT) {
-    face.leftneighbor = ftt_cell_neighbor(cell, 3);
-    face.rightneighbor = ftt_cell_neighbor(cell, 2);
-  }
-  else if (face.d == FTT_TOP) {
-    face.leftneighbor = ftt_cell_neighbor(cell, 1);
-    face.rightneighbor = ftt_cell_neighbor(cell, 0);
-  }
-  else if (face.d == FTT_BOTTOM) {
-    face.leftneighbor = ftt_cell_neighbor(cell, 0);
-    face.rightneighbor = ftt_cell_neighbor(cell, 1);
-  }
-
   (* func) (&face, data);
 }
 
+/* New Function written by Peter Zhang */
+void build_A (FttCell * cell, gpointer * JBC_data)
+{
+  printf("build_A called\n");
+  gdouble* interior_val = JBC_data[0];
+  gint * LEVEL = JBC_data[1];
+  gpointer data = JBC_data[2]; // data = bc and is of type GfsBc. It is defined as gpointer because ftt.c does not support GfsBc type variables
+  FttDirection * d = JBC_data[3];
+
+  FttCell * neighbor;
+  FttVector pos;
+  gint ind, i;
+  gdouble h;
+
+  h = 1/pow(2,*LEVEL);
+
+  neighbor = ftt_cell_neighbor(cell,*d);
+  ftt_cell_pos(neighbor, &pos);
+  
+  if (*d == FTT_TOP || *d == FTT_BOTTOM) {
+  ind = (pos.x+0.5)/h;
+//  interior_val[ind] = GFS_VALUE(neighbor,data->v); 
+  }
+  else if (*d == FTT_LEFT || *d == FTT_RIGHT) {
+  ind = (pos.y+0.5)/h;
+
+  }
+
+  
+  
+  for (i = 0; i < pow(2,*LEVEL); i++) {
+  interior_val[i] = i*1.234;
+  }
+  printf("Neighbor pos is (%f,%f)\n",pos.x,pos.y);
+
+}
 /**
  * ftt_face_traverse_boundary:
  * @root: the root #FttCell of the tree to traverse.
@@ -2253,11 +2282,7 @@ static void traverse_face_boundary (FttCell * cell, gpointer * datum)
  * @order: the order in which the cells are visited - %FTT_PRE_ORDER,
  * %FTT_POST_ORDER. 
  * @flags: which types of children are to be visited.
- * @max_depth: the maximum depth of the traversal. Cells below this
- * depth will not be traversed. If @max_depth is -1 all cells in the
- * tree are visited.
- * @func: the function to call for each visited #FttCellFace.
- * @data: user data to pass to @func.
+ * @max_depth: the maximum depth
  *
  * Traverses a cell tree starting at the given root #FttCell. Calls
  * the given function for each face of the cell tree forming the
@@ -2280,9 +2305,11 @@ void ftt_face_traverse_boundary (FttCell * root,
   datum[0] = &d;
   datum[1] = func;
   datum[2] = data;
+
   ftt_cell_traverse_boundary (root, d, order, flags, max_depth, 
 			      (FttCellTraverseFunc) traverse_face_boundary, 
 			      datum);
+  
 }
 
 /**

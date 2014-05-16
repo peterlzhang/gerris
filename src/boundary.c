@@ -256,8 +256,7 @@ static void dirichlet (FttCellFace * f, GfsBc * b) // FttCellFace structure stor
   GFS_VALUE (f->cell, b->v) = 
     2.*gfs_function_face_value (GFS_BC_VALUE (b)->val, f)
     - GFS_VALUE (f->neighbor, b->v);
-//  printf("Dirichlet called %d,\n",count);
-  printf("Dirichlet count = %d, val at interior point = %f\n",count,GFS_VALUE (f->neighbor, b->v));
+  //printf("Dirichlet count = %d, val at interior point = %f\n",count,GFS_VALUE (f->neighbor, b->v));
 }
 
 static void dirichlet_vof (FttCellFace * f, GfsBc * b)
@@ -465,31 +464,82 @@ GfsBcClass * gfs_bc_angle_class (void)
  */
 
 static void navier (FttCellFace * f, GfsBc * b)
-{ static int count = 0;
-  count += 1;
-  printf("Navier BC called %d\n",count);
+{ 
+//  static int count = 0;
+//  count += 1;
+//  printf("Navier BC called %d\n",count);
 
   gdouble h = ftt_cell_size (f->cell);
   gdouble lambda = gfs_function_face_value (GFS_BC_NAVIER (b)->lambda, f);
-// Navier Boundary condition
+////////////// Navier Boundary condition ///////////////////////
+/*
   GFS_VALUE (f->cell, b->v) = 
     (2.*gfs_function_face_value (GFS_BC_VALUE (b)->val, f)*h
      - (h - 2.*lambda)*GFS_VALUE (f->neighbor, b->v))/(h + 2.*lambda); 
+*/
+ 
 
-// Josephs new BC
-    /*
-  if (!f->leftneighbor) {
-    printf("No left neighbor\n");
+//////////////////// Josephs new BC ///////////////////////////////////
+  gint dleft, dright;
+  FttCell * leftcell, * leftleftcell, * rightcell, *rightrightcell;
+  FttCell * leftcell_interior, * leftleftcell_interior, * rightcell_interior, * rightrightcell_interior;
+  gdouble vleft, vright, vleftleft, vrightright, vb, v1;
+  gdouble temp_var;
+
+// Determine direction of left and right cells in the global coodinate system
+  if (f->d == FTT_RIGHT) {
+    dleft = 2;
+    dright = 3;     
   }
-  else if (!f-> rightneighbor) {
-    printf("No right neighbor\n");
+  else if (f->d == FTT_LEFT) {
+    dleft = 3;
+    dright = 2;     
+  }
+  else if (f->d == FTT_TOP) {
+    dleft = 1;
+    dright = 0;     
+  }
+  else if (f->d == FTT_BOTTOM) {
+    dleft = 0;
+    dright = 1;     
+  }
+
+  leftcell = ftt_cell_neighbor(f->cell, dleft);
+  rightcell = ftt_cell_neighbor(f->cell, dright);
+  vb = (GFS_VALUE(f->cell, b->v)+GFS_VALUE(f->neighbor,b->v))/2.;
+  v1 = GFS_VALUE(f->neighbor, b->v);
+
+// Compute velocity along the boundary
+  if (!leftcell) { // if no left neighbor, compute right sided difference
+    rightrightcell = ftt_cell_neighbor(rightcell, dright);
+    rightcell_interior = ftt_cell_neighbor(rightcell,f->d);
+    rightrightcell_interior = ftt_cell_neighbor(rightrightcell,f->d);
+    vright = (GFS_VALUE(rightcell, b->v)+GFS_VALUE(rightcell_interior, b->v))/2.;
+    vrightright = (GFS_VALUE(rightrightcell, b->v)+GFS_VALUE(rightrightcell_interior, b->v))/2.;
+    temp_var = (-3.*vb+4.*vright-vrightright);
+  }
+  else if (!rightcell) { // if no right neighbor, compute left sided difference
+    leftleftcell = ftt_cell_neighbor(leftcell, dleft);
+    leftcell_interior = ftt_cell_neighbor(leftcell, f->d);
+    leftleftcell_interior = ftt_cell_neighbor(leftleftcell, f->d);
+    vleft = (GFS_VALUE(leftcell, b->v)+GFS_VALUE(leftcell_interior, b->v))/2.;
+    vleftleft = (GFS_VALUE(leftleftcell, b->v)+GFS_VALUE(leftleftcell_interior, b->v))/2.;
+    temp_var = 3.*vb-4.*vleft+vleftleft;
   }
   else {
-
-  GFS_VALUE (f->cell, b->v) = 
+    leftcell_interior = ftt_cell_neighbor(leftcell, f->d);
+    rightcell_interior = ftt_cell_neighbor(rightcell,f->d);
+    vleft = (GFS_VALUE(leftcell, b->v)+GFS_VALUE(leftcell_interior, b->v))/2.;
+    vright = (GFS_VALUE(rightcell, b->v)+GFS_VALUE(rightcell_interior, b->v))/2.;
+    temp_var = vright-vleft;
   }
-*/
 
+// Prescribe ghost cell value  
+  GFS_VALUE (f->cell, b->v) =
+    (2.*gfs_function_face_value (GFS_BC_VALUE (b)->val, f)*h
+    - v1*(h-2.*lambda)+lambda*temp_var)/(h+2.*lambda);
+
+//  printf("JBC USED!!!!!!\n");
 }
 
 static void face_navier (FttCellFace * f, GfsBc * b)

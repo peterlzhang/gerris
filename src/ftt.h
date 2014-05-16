@@ -159,8 +159,10 @@ struct _FttOct {
 };
 
 struct _FttCellFace {
-  FttCell * cell, * neighbor, * leftneighbor, * rightneighbor;
+  FttCell * cell, * neighbor;
   FttDirection d;
+  FttCell * leftneighbor, * rightneighbor, * leftneighbor_interior, * rightneighbor_interior;
+
 };
 
 #define  FTT_ROOT_CELL(c)         ((struct _FttRootCell *) c)
@@ -636,7 +638,7 @@ gboolean ftt_cell_neighbor_is_brother (FttCell * cell,
     return FALSE;
   return b[FTT_CELL_ID (cell)][d];
 }
-
+ void build_A (FttCell * cell, gpointer * JBC_data);
 guint                ftt_cell_depth                  (const FttCell * root);
 void                 ftt_cell_set_neighbor           (FttCell * root,
 						      FttCell * neighbor,
@@ -652,6 +654,8 @@ void                 ftt_cell_relative_pos           (const FttCell * cell,
 						      FttVector * pos);
 void                 ftt_cell_pos                    (const FttCell * cell,
 						      FttVector * pos);
+//void                 ftt_interior_value              (const FttCellFace * f, FttVector * pos)
+
 void                 ftt_corner_relative_pos         (const FttCell * cell,
 						      FttDirection d[FTT_DIMENSION],
 						      FttVector * pos);

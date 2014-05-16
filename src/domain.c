@@ -37,6 +37,8 @@
 #include "init.h"
 
 #include "config.h"
+#include "ftt.h"
+#include "boundary.h"
 
 /* GfsLocateArray: Object */
 
@@ -723,6 +725,8 @@ typedef struct {
 static void box_bc (GfsBox * box, BcData * p)
 {
   FttDirection d;  // Initialize variable 'd' of type FttDirection
+  FttVector pos;
+
 
   for (d = 0; d < FTT_NEIGHBORS; d++) // for loop checking all directions. FTT_NEIGHBORS = 4 in 2D
     if (GFS_IS_BOUNDARY (box->neighbor[d])) { // Check if there is a boundary in direction d
@@ -730,15 +734,49 @@ static void box_bc (GfsBox * box, BcData * p)
       GfsBc * bc = gfs_boundary_lookup_bc (b, p->v); // Lookup what type of boundary should be applied to 'b' for variable 'p->v'
 
       if (bc) { // If 'bc' exists for variable 'p->v', then
-	b->v = p->v1;
-  	b->type = GFS_BOUNDARY_CENTER_VARIABLE;
-	gfs_boundary_update (b);
-	bc->v = p->v1;
-	ftt_face_traverse_boundary (b->root, b->d,
+      	b->v = p->v1;
+      	b->type = GFS_BOUNDARY_CENTER_VARIABLE;
+      	gfs_boundary_update (b);
+      	bc->v = p->v1;
+/*        if (GFS_IS_BC_NAVIER(bc)) { // test to see if bc is navier type
+          printf("BC type is Navier\n");
+
+          gpointer JBC_data[4];
+          gdouble* interior_val;
+          gint i, LEVEL;
+ 
+          LEVEL =  ftt_cell_depth (b->root);
+          printf("LEVEL = %d\n",LEVEL);
+          interior_val = (gdouble*) malloc(pow(2,LEVEL)*sizeof(gdouble));
+ 
+          for(i = 0; i < pow(2,LEVEL); i++) {
+          interior_val[i] = i;
+          }
+          
+          JBC_data[0] = interior_val;
+          JBC_data[1] = &LEVEL;
+          JBC_data[2] = bc;
+          JBC_data[3] = &b->d;
+//          printf("interior_val = [%f, %f]\n",interior_val[0],interior_val[1]);
+
+           ftt_cell_traverse_boundary (b->root,b->d, FTT_PRE_ORDER, FTT_TRAVERSE_LEAFS, -1,
+             (FttCellTraverseFunc) build_A, JBC_data); 
+
+          printf("interior_val = [%f,%f]\n",interior_val[0],interior_val[1]);
+
+          free(interior_val);
+        } */
+/*
+      	b->v = p->v1;
+      	b->type = GFS_BOUNDARY_CENTER_VARIABLE;
+      	gfs_boundary_update (b);
+      	bc->v = p->v1;
+*/
+	      ftt_face_traverse_boundary (b->root, b->d,
 				    FTT_PRE_ORDER, p->flags, p->max_depth,
 				    bc->bc, bc);
-	bc->v = p->v;
-	gfs_boundary_send (b);
+	      bc->v = p->v;
+	      gfs_boundary_send (b);
       }
     }
 }

@@ -859,7 +859,7 @@ void gfs_remove_sinking_velocity (GfsDomain * domain, GfsAdvectionParams * par)
 			      (FttFaceTraverseFunc) remove_sinking, par);
 }
 
-static void variable_sources (GfsDomain * domain,
+static void variable_sources (GfsDomain * domain, // variable_sources fills the convective terms in the advection diffusion equation. variable_diffusion fills the diffusion terms.
 			      GfsAdvectionParams * par,
 			      GfsVariable * sv,
 			      GfsVariable ** gmac,
@@ -868,20 +868,20 @@ static void variable_sources (GfsDomain * domain,
   if (par->scheme == GFS_GODUNOV) {
     GfsVariable * v = par->v;
 
-    par->u = gfs_domain_velocity (domain);
-    par->g = gmac;
-    par->fv = gfs_temporary_variable (domain);
+    par->u = gfs_domain_velocity (domain); // Fill par->u with velocity components from the domain
+    par->g = gmac; // set the gradient equal to MAC gradient
+    par->fv = gfs_temporary_variable (domain); // Create temporary variable for the flux of v
     par->upwinding = GFS_FACE_UPWINDING;
     gfs_domain_face_traverse (domain, FTT_XYZ, FTT_PRE_ORDER, FTT_TRAVERSE_LEAFS, -1,
-			      (FttFaceTraverseFunc) gfs_face_reset, par->fv);
+			      (FttFaceTraverseFunc) gfs_face_reset, par->fv); // sets fv to zero at the face and in the cell
     gfs_add_sinking_velocity (domain, par);
     face_values_set ((FttCellTraverseFunc) gfs_cell_advected_face_values, par);
     gfs_domain_face_traverse (domain, FTT_XYZ,
 			      FTT_PRE_ORDER, FTT_TRAVERSE_LEAFS, -1,
 			      (FttFaceTraverseFunc) par->flux, par);
     gfs_remove_sinking_velocity (domain, par);
-    par->v = sv;
-    gfs_domain_traverse_merged (domain, par->update, par);
+    par->v = sv; // sv is equal to rhs
+    gfs_domain_traverse_merged (domain, par->update, par); // rhs is added to par-> fv using the function par-> update. In the advection of a tracer, par->update = gfs_advection_update
     par->v = v;
     par->u = par->g = NULL;
     gts_object_destroy (GTS_OBJECT (par->fv));
@@ -910,7 +910,7 @@ static void variable_sources (GfsDomain * domain,
   gfs_domain_variable_centered_sources (domain, par->v, sv, par->dt);
 }
 
-static void variable_diffusion (GfsDomain * domain,
+static void variable_diffusion (GfsDomain * domain, // variable_diffusion fills the rhs with the diffusion terms from the advection-diffusion equation. variable_sources fills the rhs with the convective terms.
 				GfsSourceDiffusion * d,
 				GfsAdvectionParams * par,
 				GfsVariable * rhs,
@@ -925,13 +925,13 @@ static void variable_diffusion (GfsDomain * domain,
     metric->component = par->v->component;
   }
 
-  gfs_domain_surface_bc (domain, par->v);
-  gfs_diffusion_coefficients (domain, d, par->dt, rhoc, metric, alpha, d->D->par.beta);
-  gfs_diffusion_rhs (domain, par->v, rhs, rhoc, metric, d->D->par.beta);
+  gfs_domain_surface_bc (domain, par->v); // sets the boundary condition at any embedded solids
+  gfs_diffusion_coefficients (domain, d, par->dt, rhoc, metric, alpha, d->D->par.beta); // sets the diffusion coefficients
+  gfs_diffusion_rhs (domain, par->v, rhs, rhoc, metric, d->D->par.beta); // adds the diffusion terms to the rhs of the advection-diffusion equation
   /* fixme: time shoud be set to t + dt here in case boundary values are
      time-dependent in the call below */
-  gfs_domain_surface_bc (domain, par->v);
-  par->diffusion_solve (domain, &d->D->par, par->v, rhs, rhoc, metric);
+  gfs_domain_surface_bc (domain, par->v); // sets the boundary condition at any embedded solids
+  par->diffusion_solve (domain, &d->D->par, par->v, rhs, rhoc, metric); // solves the advection-diffusion equation using the multilevel relaxation scheme
 
   if (metric)
     gts_object_destroy (GTS_OBJECT (metric));
