@@ -42,7 +42,7 @@
 FttCellFace gfs_cell_face (FttCell * cell,
 			   FttDirection d)
 {
-  FttCellFace f = {cell, NULL, d, NULL, NULL, NULL, NULL};
+  FttCellFace f = {cell, NULL, d};
 
   g_return_val_if_fail (cell != NULL, f);
 
@@ -931,15 +931,15 @@ static void fullest_directions (const FttCellFace * face,
     d[i] = s->s[2*cp] > s->s[2*cp + 1] ? 2*cp : 2*cp + 1;
   }
 }
-
+/* cell_corner_neighbor1:   */
 static FttCell * cell_corner_neighbor1 (FttCell * cell,
 					FttDirection * d,
 					gint max_level)
 {
   if (!cell)
-    return NULL;
+    return NULL; // If there is no cell input, return NULL
   FttCell * neighbor = ftt_cell_neighbor (cell, d[0]);
-  if (!neighbor)
+  if (!neighbor) // If there is no neighbor in direction d[0], return NULL
     return NULL;
   else {
     guint level = ftt_cell_level (cell);
@@ -1145,13 +1145,16 @@ static gboolean face_bilinear (const FttCellFace * face,
   FttDirection d[3], d1[3];
   guint i;
   gdouble size = ftt_cell_size (face->cell);
-
+ 
   fullest_directions (face, d);
   n[0] = face->cell; n[1] = face->neighbor;
   d1[0] = d[1]; d1[1] = d[0]; d1[2] = d[2];
-  if ((n[2] = cell_corner_neighbor1 (n[0], d1, max_level)) == NULL)
+  
+
+  if ((n[2] = cell_corner_neighbor1 (n[0], d1, max_level)) == NULL) // find neighbor to n[0] in direction d1[0]
     return FALSE;
   d1[1] = FTT_OPPOSITE_DIRECTION (d[0]);
+
   if ((n[3] = cell_corner_neighbor1 (n[1], d1, max_level)) == NULL)
     return FALSE;
   if (n[3] == n[2]) {
@@ -1166,9 +1169,12 @@ static gboolean face_bilinear (const FttCellFace * face,
     guint j;
 
     (*cell_pos) (n[i + 1], &cm);
-
+    
     for (j = 0; j < FTT_DIMENSION; j++) {
+//      printf("cm.x -= o->x => %f -= %f \n",(&cm.x)[j],(&o->x)[j]);
       (&cm.x)[j] -= (&o->x)[j];
+
+//      printf("cm.x /= size => %f /= %f \n",(&cm.x)[j],size);
       (&cm.x)[j] /= size;
       g_assert (fabs ((&cm.x)[j]) <= 4.);
     }
@@ -1176,8 +1182,10 @@ static gboolean face_bilinear (const FttCellFace * face,
     m[i][0] = cm.x;
     m[i][1] = cm.y; 
     m[i][2] = cm.x*cm.y;
+
   }
   g_assert (inverse (m));
+
 #else /* 3D */
   d1[0] = d[2]; d1[1] = d[0]; d1[2] = d[1];
   if ((n[4] = cell_corner_neighbor1 (n[0], d1, max_level)) == NULL)
@@ -1463,17 +1471,22 @@ static gboolean cell_bilinear (FttCell * cell,
   FttCellFace f;
   FttDirection d[FTT_DIMENSION];
   FttComponent c;
-
+  FttVector pos;
+  // s corresponds to the fraction of face that is not occuupied by the solid, or the fraction of fluid.
+  // Test to see if cell is all fluid or all solid. If not mixed, return FALSE.
   if ((s->s[FTT_RIGHT] == 0. && s->s[FTT_LEFT] == 0.) ||
       (s->s[FTT_RIGHT] == 1. && s->s[FTT_LEFT] == 1.))
     return FALSE;
-
+  // determine direction of most fluid. d[c] denotes direction of most fluid along x, y, and z
   for (c = 0; c < FTT_DIMENSION; c++)
     d[c] = s->s[2*c] > s->s[2*c + 1] ? 2*c : 2*c + 1;
   f.cell = cell;
   f.d = d[0];
   f.neighbor = cell_corner_neighbor1 (cell, d, max_level);
-
+  ftt_cell_pos(f.cell,&pos);
+//  printf("Current cell position is (%f,%f)\n",pos.x,pos.y);
+  ftt_cell_pos(f.neighbor,&pos);
+//  printf("Neighbor1 cell position is (%f,%f)\n",pos.x,pos.y);
   return face_bilinear (&f, n, o, cell_pos, max_level, m);
 }
 
@@ -1500,21 +1513,79 @@ void gfs_cell_dirichlet_gradient (FttCell * cell,
   g_return_if_fail (cell != NULL);
   g_return_if_fail (grad != NULL);
 
+
   if (!GFS_IS_MIXED (cell))
     return;
   else {
     FttCell * n[N_CELLS];
     gdouble m[N_CELLS - 1][N_CELLS - 1];
     guint i, c;
+    
+    gdouble mmod[N_CELLS - 1][N_CELLS - 1];
+    FttVector solidnorm;
+    gdouble norm_mag;
+    gdouble Ls = 0.1;
 
     grad->x = grad->y = grad->z = 0.;
     if (!cell_bilinear (cell, n, &GFS_STATE (cell)->solid->ca, 
 			gfs_cell_cm, max_level, m))
       return;
 
-    for (i = 0; i < N_CELLS - 1; i++)
-      for (c = 0; c < FTT_DIMENSION; c++)
-	(&grad->x)[c] += m[c][i]*(GFS_VALUEI (n[i + 1], v) - v0);
+    gfs_solid_normal(n[0],&solidnorm);
+//    printf("solid normal = (%f,%f,%f)\n",solidnorm.x,solidnorm.y,solidnorm.z);
+    norm_mag = pow((pow(solidnorm.x,2)+pow(solidnorm.y,2)+pow(solidnorm.z,2)),0.5);
+    solidnorm.x = -solidnorm.x/norm_mag;
+    solidnorm.y = -solidnorm.y/norm_mag;
+    solidnorm.z = -solidnorm.z/norm_mag;
+//    printf("normalized solid normal = (%f,%f,%f)\n",solidnorm.x,solidnorm.y,solidnorm.z);    
+
+/* Dirichlet condition at the wall */
+/*
+    for (i = 0; i < N_CELLS - 1; i++) {// in 2D, i = 0,1,2
+      for (c = 0; c < FTT_DIMENSION; c++) { // in 2D c = 0,1
+        printf("m[c][i] = m[%d][%d] = %f\n",c,i,m[c][i]);
+        printf("v = %d, v0 = %f\n",v,v0);
+        printf("(GFS_VALUEI (n[i + 1], v) = %f\n",GFS_VALUEI (n[i + 1], v));
+        printf("(&grad->x)[%d] = %f += %f*(%f-%f)\n",c,(&grad->x)[c],m[c][i],GFS_VALUEI (n[i + 1], v),v0); 
+        (&grad->x)[c] += m[c][i]*(GFS_VALUEI (n[i + 1], v) - v0);
+        printf("(&grad->x)[%d] = %f\n",c,(&grad->x)[c]);
+      }
+    }
+    
+*/
+    /* Modified solution for gradient using the slip condition
+        NOTE: the implementation of this is very basic. Therefore
+              slip will be universally applied to all variables, velocity or tracer.
+    */
+        
+    inverse(m);
+/*    printf("Original m\n");
+    printf("m[0][:} = [%f %f %f]\n",m[0][0],m[0][1],m[0][2]);
+    printf("m[1][:} = [%f %f %f]\n",m[1][0],m[1][1],m[1][2]);
+    printf("m[2][:} = [%f %f %f]\n",m[2][0],m[2][1],m[2][2]);
+*/
+    for (i = 0; i < N_CELLS - 1; i++) {
+      mmod[i][0] = m[i][0]+Ls*solidnorm.x;
+      mmod[i][1] = m[i][1]+Ls*solidnorm.y;
+      mmod[i][2] = m[i][2] + Ls*m[i][1]*solidnorm.x + Ls*m[i][0]*solidnorm.y;
+    }
+
+/*    printf("Modified slip m\n");
+    printf("mmod[0][:} = [%f %f %f]\n",mmod[0][0],mmod[0][1],mmod[0][2]);
+    printf("mmod[1][:} = [%f %f %f]\n",mmod[1][0],mmod[1][1],mmod[1][2]);
+    printf("mmod[2][:} = [%f %f %f]\n",mmod[2][0],mmod[2][1],mmod[2][2]);
+*/
+    inverse(mmod);
+/*   printf("Inverse of modified slip m\n");
+    printf("mmod[0][:} = [%f %f %f]\n",mmod[0][0],mmod[0][1],mmod[0][2]);
+    printf("mmod[1][:} = [%f %f %f]\n",mmod[1][0],mmod[1][1],mmod[1][2]);
+    printf("mmod[2][:} = [%f %f %f]\n",mmod[2][0],mmod[2][1],mmod[2][2]);
+*/
+    for (i = 0; i < N_CELLS - 1; i++) {// in 2D, i = 0,1,2
+      for (c = 0; c < FTT_DIMENSION; c++) { // in 2D c = 0,1
+        (&grad->x)[c] += mmod[c][i]*(GFS_VALUEI (n[i + 1], v) - v0);
+      }
+    }
   }
 }
 
@@ -1533,6 +1604,7 @@ void gfs_mixed_cell_gradient (FttCell * cell,
 			      GfsVariable * v,
 			      FttVector * g)
 {
+  printf("SOLID1\n");
   FttCell * n[N_CELLS];
   gdouble m[N_CELLS - 1][N_CELLS - 1];
   gdouble v0, h;
@@ -1588,6 +1660,7 @@ gdouble gfs_mixed_cell_interpolate (FttCell * cell,
 				    FttVector p,
 				    GfsVariable * v)
 {
+  printf("SOLID2\n");
   FttCell * n[N_CELLS];
   gdouble m[N_CELLS - 1][N_CELLS - 1], a[N_CELLS - 1];
   gdouble v0, h;
@@ -1647,13 +1720,15 @@ gdouble gfs_cell_dirichlet_gradient_flux (FttCell * cell,
 					  gdouble v0)
 {
   g_return_val_if_fail (cell != NULL, 0.);
-
-  if (!GFS_IS_MIXED (cell))
+  printf("SOLID3\n");
+  if (!GFS_IS_MIXED (cell)) 
     return 0.;
   else {
     GfsSolidVector * s = GFS_STATE (cell)->solid;
     FttVector g;    
+//    printf("Initial g = (%f,%f,%f)\n",g.x,g.y,g.z);
     gfs_cell_dirichlet_gradient (cell, v, max_level, v0, &g);
+//    printf("After cell_dirichlet_gradient g = (%f,%f,%f)\n",g.x,g.y,g.z);
     return g.x*s->v.x + g.y*s->v.y + g.z*s->v.z;
   }
 }

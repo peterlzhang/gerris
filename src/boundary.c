@@ -472,14 +472,15 @@ static void navier (FttCellFace * f, GfsBc * b)
   gdouble h = ftt_cell_size (f->cell);
   gdouble lambda = gfs_function_face_value (GFS_BC_NAVIER (b)->lambda, f);
 ////////////// Navier Boundary condition ///////////////////////
-/*
+
   GFS_VALUE (f->cell, b->v) = 
     (2.*gfs_function_face_value (GFS_BC_VALUE (b)->val, f)*h
      - (h - 2.*lambda)*GFS_VALUE (f->neighbor, b->v))/(h + 2.*lambda); 
-*/
+
  
 
 //////////////////// Josephs new BC ///////////////////////////////////
+/*
   gint dleft, dright;
   FttCell * leftcell, * leftleftcell, * rightcell, *rightrightcell;
   FttCell * leftcell_interior, * leftleftcell_interior, * rightcell_interior, * rightrightcell_interior;
@@ -540,6 +541,8 @@ static void navier (FttCellFace * f, GfsBc * b)
     - v1*(h-2.*lambda)+lambda*temp_var)/(h+2.*lambda);
 
 //  printf("JBC USED!!!!!!\n");
+
+*/
 }
 
 static void face_navier (FttCellFace * f, GfsBc * b)
