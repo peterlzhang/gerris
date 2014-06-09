@@ -1539,53 +1539,37 @@ void gfs_cell_dirichlet_gradient (FttCell * cell,
     solidnorm.z = -solidnorm.z/norm_mag;
 //    printf("normalized solid normal = (%f,%f,%f)\n",solidnorm.x,solidnorm.y,solidnorm.z);    
 
-/* Dirichlet condition at the wall */
-/*
-    for (i = 0; i < N_CELLS - 1; i++) {// in 2D, i = 0,1,2
-      for (c = 0; c < FTT_DIMENSION; c++) { // in 2D c = 0,1
-        printf("m[c][i] = m[%d][%d] = %f\n",c,i,m[c][i]);
-        printf("v = %d, v0 = %f\n",v,v0);
-        printf("(GFS_VALUEI (n[i + 1], v) = %f\n",GFS_VALUEI (n[i + 1], v));
-        printf("(&grad->x)[%d] = %f += %f*(%f-%f)\n",c,(&grad->x)[c],m[c][i],GFS_VALUEI (n[i + 1], v),v0); 
-        (&grad->x)[c] += m[c][i]*(GFS_VALUEI (n[i + 1], v) - v0);
-        printf("(&grad->x)[%d] = %f\n",c,(&grad->x)[c]);
+/* Modify matrix m to include slip at the interface */
+/*    if ( v == 2 || v == 3) {
+      inverse(m);
+
+      for (i = 0; i < N_CELLS - 1; i++) {
+        mmod[i][0] = m[i][0]+Ls*solidnorm.x;
+        mmod[i][1] = m[i][1]+Ls*solidnorm.y;
+        mmod[i][2] = m[i][2] + Ls*m[i][1]*solidnorm.x + Ls*m[i][0]*solidnorm.y;
+      }
+      inverse(mmod);
+      
+      for (i = 0; i < N_CELLS - 1; i++) {
+        m[i][0] = mmod[i][0];
+        m[i][1] = mmod[i][1];
+        m[i][2] = mmod[i][2];
       }
     }
-    
 */
-    /* Modified solution for gradient using the slip condition
-        NOTE: the implementation of this is very basic. Therefore
-              slip will be universally applied to all variables, velocity or tracer.
-    */
-        
-    inverse(m);
-/*    printf("Original m\n");
-    printf("m[0][:} = [%f %f %f]\n",m[0][0],m[0][1],m[0][2]);
-    printf("m[1][:} = [%f %f %f]\n",m[1][0],m[1][1],m[1][2]);
-    printf("m[2][:} = [%f %f %f]\n",m[2][0],m[2][1],m[2][2]);
-*/
-    for (i = 0; i < N_CELLS - 1; i++) {
-      mmod[i][0] = m[i][0]+Ls*solidnorm.x;
-      mmod[i][1] = m[i][1]+Ls*solidnorm.y;
-      mmod[i][2] = m[i][2] + Ls*m[i][1]*solidnorm.x + Ls*m[i][0]*solidnorm.y;
+
+/* Dirichlet condition at the wall */
+    for (i = 0; i < N_CELLS - 1; i++) {// in 2D, i = 0,1,2
+      for (c = 0; c < FTT_DIMENSION; c++) { // in 2D c = 0,1
+//        printf("m[c][i] = m[%d][%d] = %f\n",c,i,m[c][i]);
+//        printf("v = %d, v0 = %f\n",v,v0);
+//        printf("(GFS_VALUEI (n[i + 1], v) = %f\n",GFS_VALUEI (n[i + 1], v));
+//        printf("(&grad->x)[%d] = %f += %f*(%f-%f)\n",c,(&grad->x)[c],m[c][i],GFS_VALUEI (n[i + 1], v),v0); 
+        (&grad->x)[c] += m[c][i]*(GFS_VALUEI (n[i + 1], v) - v0);
+//        printf("(&grad->x)[%d] = %f\n",c,(&grad->x)[c]);
+      }
     }
 
-/*    printf("Modified slip m\n");
-    printf("mmod[0][:} = [%f %f %f]\n",mmod[0][0],mmod[0][1],mmod[0][2]);
-    printf("mmod[1][:} = [%f %f %f]\n",mmod[1][0],mmod[1][1],mmod[1][2]);
-    printf("mmod[2][:} = [%f %f %f]\n",mmod[2][0],mmod[2][1],mmod[2][2]);
-*/
-    inverse(mmod);
-/*   printf("Inverse of modified slip m\n");
-    printf("mmod[0][:} = [%f %f %f]\n",mmod[0][0],mmod[0][1],mmod[0][2]);
-    printf("mmod[1][:} = [%f %f %f]\n",mmod[1][0],mmod[1][1],mmod[1][2]);
-    printf("mmod[2][:} = [%f %f %f]\n",mmod[2][0],mmod[2][1],mmod[2][2]);
-*/
-    for (i = 0; i < N_CELLS - 1; i++) {// in 2D, i = 0,1,2
-      for (c = 0; c < FTT_DIMENSION; c++) { // in 2D c = 0,1
-        (&grad->x)[c] += mmod[c][i]*(GFS_VALUEI (n[i + 1], v) - v0);
-      }
-    }
   }
 }
 
@@ -1720,7 +1704,7 @@ gdouble gfs_cell_dirichlet_gradient_flux (FttCell * cell,
 					  gdouble v0)
 {
   g_return_val_if_fail (cell != NULL, 0.);
-  printf("SOLID3\n");
+//  printf("SOLID3 called for v = %d\n",v);
   if (!GFS_IS_MIXED (cell)) 
     return 0.;
   else {
