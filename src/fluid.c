@@ -1524,7 +1524,9 @@ void gfs_cell_dirichlet_gradient (FttCell * cell,
     gdouble mmod[N_CELLS - 1][N_CELLS - 1];
     FttVector solidnorm;
     gdouble norm_mag;
-    gdouble Ls = 0.1;
+    gdouble Ls = 0.01;
+    gdouble  temp;
+    FttVector pos;
 
     grad->x = grad->y = grad->z = 0.;
     if (!cell_bilinear (cell, n, &GFS_STATE (cell)->solid->ca, 
@@ -1539,15 +1541,36 @@ void gfs_cell_dirichlet_gradient (FttCell * cell,
     solidnorm.z = -solidnorm.z/norm_mag;
 //    printf("normalized solid normal = (%f,%f,%f)\n",solidnorm.x,solidnorm.y,solidnorm.z);    
 
-/* Modify matrix m to include slip at the interface */
-/*    if ( v == 2 || v == 3) {
-      inverse(m);
 
-      for (i = 0; i < N_CELLS - 1; i++) {
+/* Modify matrix m to include slip at the interface */
+    if ( v == 2 || v == 3) {
+      inverse(m);
+    ////////////////////////////////////////////////////////////
+      // Navier slip linear interpolation at the solid surface
+/*      for (i = 0; i < N_CELLS - 1; i++) {
         mmod[i][0] = m[i][0]+Ls*solidnorm.x;
         mmod[i][1] = m[i][1]+Ls*solidnorm.y;
         mmod[i][2] = m[i][2] + Ls*m[i][1]*solidnorm.x + Ls*m[i][0]*solidnorm.y;
       }
+    ////////////////////////////////////////////////////////////
+*/
+    ////////////////////////////////////////////////////////////
+      // JBC slip linear interpolation at the solid surface
+      //GfsVariable * tempvar = gfs_variable_from_name(
+      // GfsVariableTracerVOF * t = GFS_VARIABLE_TRACER_VOF_HEIGHT (v);
+//      printf("JBC\n");
+      temp = GFS_VALUEI(cell,4);
+      if (temp < 1. && temp > 0.) {
+        ftt_cell_pos(cell,&pos); 
+        printf("T(%f,%f) = %f\n",pos.x,pos.y,temp);
+      }
+      for (i = 0; i < N_CELLS - 1; i++) {
+        mmod[i][0] = m[i][0]+Ls*solidnorm.x-Ls*solidnorm.y;
+        mmod[i][1] = m[i][1]+Ls*solidnorm.y+Ls*solidnorm.x;
+        mmod[i][2] = m[i][2] + Ls*m[i][1]*solidnorm.x + Ls*m[i][0]*solidnorm.y-Ls*m[i][1]*solidnorm.y+Ls*m[i][0]*solidnorm.x;
+      }
+    ////////////////////////////////////////////////////////////
+
       inverse(mmod);
       
       for (i = 0; i < N_CELLS - 1; i++) {
@@ -1556,7 +1579,7 @@ void gfs_cell_dirichlet_gradient (FttCell * cell,
         m[i][2] = mmod[i][2];
       }
     }
-*/
+
 
 /* Dirichlet condition at the wall */
     for (i = 0; i < N_CELLS - 1; i++) {// in 2D, i = 0,1,2

@@ -28,6 +28,7 @@
 #include "tension.h"
 #include "init.h"
 #include "mpi_boundary.h"
+#include "vof.h"
 
 /**
  * gfs_multilevel_params_write:
@@ -499,6 +500,7 @@ typedef struct {
   gint maxlevel;
   gdouble beta, omega;
   guint metric;
+  GfsVariable * v;
 } RelaxParams;
 
 /* relax_stencil() needs to be updated whenever this
@@ -1403,7 +1405,11 @@ static void diffusion_rhs (FttCell * cell, RelaxParams * p)
   gdouble f, h, val;
   FttCellNeighbors neighbor;
   FttCellFace face;
-  
+ 
+  if(p->v) {
+    printf("Tracer exists (within diffusion_rhs) \n");
+  }
+ 
   if (GFS_IS_MIXED (cell)) {
     GfsSolidVector * solid = GFS_STATE (cell)->solid;
     if (((cell)->flags & GFS_FLAG_DIRICHLET) != 0)
@@ -1450,6 +1456,9 @@ void gfs_diffusion_rhs (GfsDomain * domain,
 			gdouble beta)
 {
   RelaxParams p;
+  GSList * i;
+
+//  JBCRelaxParams p;
 
   g_return_if_fail (domain != NULL);
   g_return_if_fail (v != NULL);
@@ -1457,11 +1466,39 @@ void gfs_diffusion_rhs (GfsDomain * domain,
   g_return_if_fail (rhoc != NULL);
   g_return_if_fail (beta >= 0.5 && beta <= 1.);
 
+
   p.u = v->i;
   p.rhs = rhs->i;
   p.dia = rhoc->i;
   p.beta = (1. - beta)/beta;
   p.metric = metric ? metric->i : FALSE;
+  p.v = NULL;
+
+  i = domain->variables;
+  while (i) {
+    GfsVariable * tempvar = i->data;
+    if (GFS_IS_VARIABLE_TRACER_VOF(tempvar)) {
+      printf("%s is a VOF tracer\n",tempvar->name);
+      //GfsVariableTracerVOF * t = GFS_VARIABLE_TRACER_VOF (tempvar);
+      p.v = tempvar;
+    }
+    i = i->next;
+  } 
+
+ 
+
+/*  GfsVariable * tempvar = gfs_variable_from_name(domain->variables,"T");
+  if (tempvar) {
+    if (GFS_IS_VARIABLE_TRACER_VOF(tempvar)) {
+      printf("T is a variable tracer\n");
+      GfsVariableTracerVOF * t = GFS_VARIABLE_TRACER_VOF (tempvar);
+    }
+    else {
+      printf("T is not a variable tracer\n");
+    }  
+  }
+*/
+
   gfs_domain_cell_traverse (domain, FTT_PRE_ORDER, FTT_TRAVERSE_LEAFS, -1,
 			    (FttCellTraverseFunc) diffusion_rhs, &p);
 }

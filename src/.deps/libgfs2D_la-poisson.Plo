@@ -123,7 +123,7 @@ libgfs2D_la-poisson.lo: poisson.c /usr/include/math.h \
  /usr/include/glib-2.0/gmodule.h ../config.h /usr/local/include/mpi.h \
  /usr/local/include/mpio.h /usr/local/include/mpi.h surface.h solid.h \
  event.h simulation.h timestep.h advection.h variable.h source.h \
- tension.h init.h mpi_boundary.h
+ tension.h init.h mpi_boundary.h vof.h
 
 /usr/include/math.h:
 
@@ -466,3 +466,5 @@ tension.h:
 init.h:
 
 mpi_boundary.h:
+
+vof.h:
