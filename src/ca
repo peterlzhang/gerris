@@ -1,0 +1,1148 @@
+adaptive.c:  (* GTS_OBJECT_CLASS (gfs_adapt_class ())->parent_class->destroy) (o);
+adaptive.c:  if (GTS_OBJECT_CLASS (gfs_adapt_class ())->parent_class->read)
+adaptive.c:    (* GTS_OBJECT_CLASS (gfs_adapt_class ())->parent_class->read) 
+adaptive.c:  if (GTS_OBJECT_CLASS (gfs_adapt_class ())->parent_class->write)
+adaptive.c:    (* GTS_OBJECT_CLASS (gfs_adapt_class ())->parent_class->write) 
+adaptive.c:  klass->event = gfs_adapt_event;
+adaptive.c:  klass->post_event = gfs_adapt_post_event;
+adaptive.c:  (* GTS_OBJECT_CLASS (gfs_adapt_function_class ())->parent_class->destroy) (o);
+adaptive.c:  (* GTS_OBJECT_CLASS (gfs_adapt_function_class ())->parent_class->read) (o, fp);
+adaptive.c:  (* GTS_OBJECT_CLASS (gfs_adapt_function_class ())->parent_class->write) (o, fp);
+adaptive.c:  klass->destroy = gfs_adapt_function_destroy;  
+adaptive.c:  klass->read = gfs_adapt_function_read;
+adaptive.c:  klass->write = gfs_adapt_function_write;
+adaptive.c:  (* GTS_OBJECT_CLASS (gfs_adapt_gradient_class ())->parent_class->destroy) (o);
+adaptive.c:  (* GTS_OBJECT_CLASS (gfs_adapt_gradient_class ())->parent_class->read) (o, fp);
+adaptive.c:  klass->event = gfs_adapt_gradient_event;
+adaptive.c:  (* GTS_OBJECT_CLASS (gfs_adapt_error_class ())->parent_class->destroy) (o);
+adaptive.c:  (* GTS_OBJECT_CLASS (gfs_adapt_error_class ())->parent_class->read) (o, fp);
+adaptive.c:  (* GTS_OBJECT_CLASS (gfs_adapt_thickness_class ())->parent_class->destroy) (o);
+adaptive.c:  (* GTS_OBJECT_CLASS (gfs_adapt_thickness_class ())->parent_class->read) (o, fp);
+adaptive.c:  (* GTS_OBJECT_CLASS (gfs_adapt_thickness_class ())->parent_class->write) (o, fp);
+adaptive.c:  klass->event = gfs_adapt_thickness_event;
+adaptive.c:  GSList * i = sim->adapts->items;
+adaptive.c:  GSList * i = sim->adapts->items;
+adaptive.c:  GSList * i = sim->adapts->items;
+adaptive.c:      s->removed += n - apar.nc;
+adaptive.c:      s->created += apar.nc - n;
+adaptive.c:  gts_range_add_value (&s->cmax, -ccoarse);
+adaptive.c:  gts_range_add_value (&s->ncells, apar.nc);
+adaptive.c:    p->s->removed++;
+adaptive.c:    p->s->created += FTT_CELLS;
+adaptive.c:  GSList * i = p->sim->adapts->items;
+adaptive.c:  gts_range_add_value (&s->ncells, p.nc);
+adaptive.c:  GSList * i = simulation->adapts->items;
+adaptive.c:  s->removed = 0;
+adaptive.c:  s->created = 0;
+adaptive.c:  gts_range_init (&s->cmax);
+adaptive.c:  gts_range_init (&s->ncells);
+adaptive.c:  s->depth_increase = 0;
+adaptive.c:  gts_range_update (&s->cmax);
+adaptive.c:  gts_range_update (&s->ncells);
+advection.c:    (s->f[2*c].un + s->f[2*c + 1].un)/2.;
+advection.c:      par->dt*(s->f[2*c].un + s->f[2*c + 1].un)/(2.*msize[c]);
+advection.c:    s->f[2*c].v     = vl + src - dv;
+advection.c:    s->f[2*c + 1].v = vr + src - dv;
+advection.c:    s->f[2*c].v     = vl + src;
+advection.c:    s->f[2*c + 1].v = vr + src;
+advection.c:    gdouble s1 = s->solid ? s->solid->s[dleft] : 1., s2;
+advection.c:    gdouble v1 = s->f[dleft].v, v2;
+advection.c:  return s->f[dleft].v;
+balance.c:  if (GTS_OBJECT_CLASS (gfs_event_balance_class ())->parent_class->write)
+balance.c:    (* GTS_OBJECT_CLASS (gfs_event_balance_class ())->parent_class->write)
+balance.c:  fprintf (fp, " %g", s->max);
+balance.c:  if (GTS_OBJECT_CLASS (gfs_event_balance_class ())->parent_class->read)
+balance.c:    (* GTS_OBJECT_CLASS (gfs_event_balance_class ())->parent_class->read) 
+balance.c:  s->max = gfs_read_constant (fp, domain);
+balance.c:    if (size.max/size.min > 1. + s->max) {
+boundary.c:  fprintf (fp, "%s %s", o->klass->info.name, GFS_BC (o)->v->name);
+boundary.c:  klass->write = bc_write;
+boundary.c:  klass->read =  bc_read;
+boundary.c:  if (GTS_OBJECT_CLASS (gfs_bc_value_class ())->parent_class->write)
+boundary.c:    (* GTS_OBJECT_CLASS (gfs_bc_value_class ())->parent_class->write) 
+boundary.c:  if (GTS_OBJECT_CLASS (gfs_bc_value_class ())->parent_class->read)
+boundary.c:    (* GTS_OBJECT_CLASS (gfs_bc_value_class ())->parent_class->read) 
+boundary.c:  (* GTS_OBJECT_CLASS (gfs_bc_value_class ())->parent_class->destroy) (o);
+boundary.c:  klass->write   = bc_value_write;
+boundary.c:  klass->read    = bc_value_read;
+boundary.c:  klass->destroy = bc_value_destroy;
+boundary.c:  if (GTS_OBJECT_CLASS (gfs_bc_dirichlet_class ())->parent_class->read)
+boundary.c:    (* GTS_OBJECT_CLASS (gfs_bc_dirichlet_class ())->parent_class->read) (o, fp);
+boundary.c:  klass->read = bc_dirichlet_read;
+boundary.c:  if (GTS_OBJECT_CLASS (gfs_bc_neumann_class ())->parent_class->read)
+boundary.c:    (* GTS_OBJECT_CLASS (gfs_bc_neumann_class ())->parent_class->read) (o, fp);
+boundary.c:  klass->read = bc_neumann_read;
+boundary.c:  (* GTS_OBJECT_CLASS (gfs_bc_angle_class ())->parent_class->read) (o, fp);
+boundary.c:  klass->read = bc_angle_read;
+boundary.c:  if (GTS_OBJECT_CLASS (gfs_bc_navier_class ())->parent_class->read)
+boundary.c:    (* GTS_OBJECT_CLASS (gfs_bc_navier_class ())->parent_class->read) (o, fp);
+boundary.c:  (* GTS_OBJECT_CLASS (gfs_bc_navier_class ())->parent_class->write) (o, fp);
+boundary.c:  klass->read = bc_navier_read;
+boundary.c:  klass->write = bc_navier_write;
+boundary.c:  (* GTS_OBJECT_CLASS (gfs_boundary_class ())->parent_class->destroy) (object);
+boundary.c:    if (s && s->s[FTT_OPPOSITE_DIRECTION (boundary->d)] == 0.) {
+boundary.c:      t->a = s->a;
+boundary.c:	  t->s[d] = s->s[FTT_OPPOSITE_DIRECTION (d)];
+boundary.c:	  t->s[d] = s->s[d];
+boundary.c:	  (&t->cm.x)[c] = (&p1.x)[c] + (&p2.x)[c] - (&s->cm.x)[c];
+boundary.c:	  (&t->ca.x)[c] = (&p1.x)[c] + (&p2.x)[c] - (&s->ca.x)[c];
+boundary.c:	  (&t->cm.x)[c] = (&s->cm.x)[c];
+boundary.c:	  (&t->ca.x)[c] = (&s->ca.x)[c];
+boundary.c:    if(GTS_OBJECT (bc)->klass->write) {
+boundary.c:      (* GTS_OBJECT (bc)->klass->write) (GTS_OBJECT (bc), fp);
+boundary.c:  if (GTS_OBJECT_CLASS (gfs_boundary_class ())->parent_class->write)
+boundary.c:    (* GTS_OBJECT_CLASS (gfs_boundary_class ())->parent_class->write) 
+boundary.c:      g_assert (klass->read);
+boundary.c:      (* klass->read) (&object, fp);
+boundary.c:  if (GTS_OBJECT_CLASS (gfs_boundary_class ())->parent_class->read)
+boundary.c:    (* GTS_OBJECT_CLASS (gfs_boundary_class ())->parent_class->read) 
+boundary.c:  klass->match = boundary_match;
+boundary.c:  if (GTS_OBJECT_CLASS (gfs_boundary_inflow_constant_class ())->parent_class->write)
+boundary.c:    (* GTS_OBJECT_CLASS (gfs_boundary_inflow_constant_class ())->parent_class->write) 
+boundary.c:  if (GTS_OBJECT_CLASS (gfs_boundary_inflow_constant_class ())->parent_class->read)
+boundary.c:    (* GTS_OBJECT_CLASS (gfs_boundary_inflow_constant_class ())->parent_class->read) 
+boundary.c:  klass->read    = inflow_constant_read;
+boundary.c:  klass->write   = inflow_constant_write;
+boundary.c:  klass->color   = inflow_color;
+boundary.c:  if (GTS_OBJECT_CLASS (gfs_boundary_outflow_class ())->parent_class->read)
+boundary.c:    (* GTS_OBJECT_CLASS (gfs_boundary_outflow_class ())->parent_class->read) 
+boundary.c:  if (GTS_OBJECT_CLASS (gfs_boundary_gradient_class ())->parent_class->read)
+boundary.c:    (* GTS_OBJECT_CLASS (gfs_boundary_gradient_class ())->parent_class->read) 
+boundary.c:  (* GTS_OBJECT_CLASS (gfs_boundary_periodic_class ())->parent_class->destroy) 
+boundary.c:  parent_class->match             = periodic_match;
+boundary.c:  parent_class->send              = send;
+boundary.c:  parent_class->receive           = receive;
+boundary.c:  parent_class->synchronize       = synchronize;
+boundary.c:  klass->write = gfs_gedge_write;
+boundary.c:  klass->read = gfs_gedge_read;
+boundary.c:  (* GTS_OBJECT_CLASS (gfs_box_class ())->parent_class->destroy) (object);
+boundary.c:	   object->klass->info.name, box->id, box->pid, size, pos.x, pos.y, pos.z);
+boundary.c:	       box->neighbor[d]->klass->info.name);
+boundary.c:      if (box->neighbor[d]->klass->write)
+boundary.c:	(* box->neighbor[d]->klass->write) (box->neighbor[d], fp);
+boundary.c:	      !GTS_SLIST_CONTAINEE (b)->containers->next);
+boundary.c:    domain = GFS_DOMAIN (GTS_SLIST_CONTAINEE (b)->containers->data);
+boundary.c:      if (boundary_class->read)
+boundary.c:	(* boundary_class->read) (&boundary, fp);
+boundary.c:  if (class_changed && klass->read)
+boundary.c:    (* klass->read) (o, fp);
+cartesian.c:  if (GTS_OBJECT_CLASS (gfs_cartesian_grid_class ())->parent_class->read)
+cartesian.c:    (* GTS_OBJECT_CLASS (gfs_cartesian_grid_class ())->parent_class->read) 
+cartesian.c:  if (GTS_OBJECT_CLASS (gfs_cartesian_grid_class ())->parent_class->write)
+cartesian.c:    (* GTS_OBJECT_CLASS (gfs_cartesian_grid_class ())->parent_class->write) 
+cartesian.c:  (* GTS_OBJECT_CLASS (gfs_cartesian_grid_class ())->parent_class->destroy) (object);
+cartesian.c:  s->N = g->N - 1;
+cartesian.c:  s->n = &g->n[1];
+cartesian.c:  s->x = &g->x[1];
+cartesian.c:  s->v = &g->v[size*p];
+cartesian.c:  (* klass->read) (&o, fp1);
+domain.c:  if (GTS_OBJECT_CLASS (gfs_domain_class ())->parent_class->write)
+domain.c:    (* GTS_OBJECT_CLASS (gfs_domain_class ())->parent_class->write) (o, fp);
+domain.c:  if (GTS_OBJECT_CLASS (gfs_domain_class ())->parent_class->read)
+domain.c:    (* GTS_OBJECT_CLASS (gfs_domain_class ())->parent_class->read) (o, fp);
+domain.c:    p.x = pos->x + rpos[d].x*size;
+domain.c:    p.y = pos->y + rpos[d].y*size;
+domain.c:    p.z = pos->z + rpos[d].z*size;
+domain.c:  if (box->id > ids->len)
+domain.c:      if (b->id >= 0 && b->id <= ids->len && (nbox = g_ptr_array_index (ids, b->id - 1))) {
+domain.c:  (* GTS_OBJECT_CLASS (gfs_domain_class ())->parent_class->destroy) (o);
+domain.c:  klass->post_read = domain_post_read;
+domain.c:    in[0] = s->min; in[1] = s->max; in[2] = s->sum; in[3] = s->sum2;
+domain.c:    in[4] = s->n;
+domain.c:    s->min = out[0]; s->max = out[1]; s->sum = out[2]; s->sum2 = out[3];
+domain.c:    s->n = out[4];
+domain.c:  GfsDomain * domain = p->res->domain;
+domain.c:      if (s->face_value)
+domain.c:	g += (* s->face_value) (s, face, p->v[c]);
+domain.c:    solid = tos->solid;
+domain.c:    if (froms->solid == NULL) {
+domain.c:      tos->solid = solid;
+domain.c:      *solid = *(froms->solid);
+domain.c:      fprintf (fp, " %g", s->solid->s[i]);
+domain.c:    fprintf (fp, " %g", s->solid->a);
+domain.c:      fprintf (fp, " %g", (&s->solid->cm.x)[i]);
+domain.c:    fprintf (fp, " %g", GFS_VALUE (cell, GFS_VARIABLE (variables->data)));
+domain.c:    variables = variables->next;
+domain.c:    s->solid = g_malloc0 (sizeof (GfsSolidVector));
+domain.c:    s->solid->s[0] = s0;
+domain.c:      s->solid->s[i] = atof (fp->token->str);
+domain.c:    s->solid->a = atof (fp->token->str);
+domain.c:      (&s->solid->cm.x)[i] = atof (fp->token->str);
+domain.c:    fwrite (s->solid->s, sizeof (gdouble), FTT_NEIGHBORS, fp);
+domain.c:    fwrite (&s->solid->a, sizeof (gdouble), 1, fp);
+domain.c:    fwrite (&s->solid->cm.x, sizeof (gdouble), FTT_DIMENSION, fp);
+domain.c:    fwrite (&s->solid->ca.x, sizeof (gdouble), FTT_DIMENSION, fp);
+domain.c:    gdouble a = GFS_VALUE (cell, GFS_VARIABLE (variables->data));
+domain.c:    variables = variables->next;
+domain.c:    s->solid = g_malloc0 (sizeof (GfsSolidVector));
+domain.c:    s->solid->s[0] = s0;
+domain.c:    if (gts_file_read (fp, &s->solid->s[1], sizeof (gdouble), FTT_NEIGHBORS - 1) 
+domain.c:    if (gts_file_read (fp, &s->solid->a, sizeof (gdouble), 1) != 1) {
+domain.c:    if (gts_file_read (fp, &s->solid->cm.x, sizeof (gdouble), FTT_DIMENSION) != FTT_DIMENSION) {
+domain.c:	gts_file_read (fp, &s->solid->ca.x, sizeof (gdouble), FTT_DIMENSION) != FTT_DIMENSION) {
+domain.c:    gdouble * r = &s->ca.x;
+domain.c:    gfs_cell_dirichlet_gradient (cell, f->v->i, -1, s->fv, &g, NULL);
+domain.c:    n.x = s->s[1] - s->s[0];
+domain.c:    n.y = s->s[3] - s->s[2];
+domain.c:    n.z = s->s[5] - s->s[4];
+domain.c:    GFS_VALUE (cell, v) = sizes->len + 1;
+domain.c:      tag_cell (fifo, cell, v, sizes->len + 1, &size);
+domain.c:  g_assert (sizes->len > 0);
+domain.c:  else if (-min >= sizes->len)
+domain.c:    guint * tmp = g_malloc (sizes->len*sizeof (guint));
+domain.c:    memcpy (tmp, sizes->data, sizes->len*sizeof (guint));
+domain.c:    qsort (tmp, sizes->len, sizeof (guint), greater);
+domain.c:    g_assert (object->klass->write != NULL);
+domain.c:    (* object->klass->write) (object, fp);
+domain.c:      g_assert (klass->read);
+domain.c:      (* klass->read) (&object, fp);
+domain.c:  (* GTS_OBJECT_CLASS (gfs_domain_projection_class ())->parent_class->destroy) (o);
+event.c:  fprintf (fp, "%s", object->klass->info.name);
+event.c:  if (class_changed && fp->type != '\n' && klass->read)
+event.c:    (* klass->read) (o, fp);
+event.c:  (* GTS_OBJECT_CLASS (gfs_event_class ())->parent_class->destroy) (o);
+event.c:  klass->event = gfs_event_event;
+event.c:  gchar * name = GTS_OBJECT (event)->klass->info.name;
+event.c:  g_assert (klass->event);
+event.c:  if ((* klass->event) (event, sim) && klass->post_event)
+event.c:    (* klass->post_event) (event, sim);
+event.c:  g_assert (klass->event);
+event.c:  if ((* klass->event) (event, sim) && klass->post_event)
+event.c:    (* klass->post_event) (event, sim);
+event.c:  if (GTS_OBJECT_CLASS (gfs_init_class ())->parent_class->read)
+event.c:    (* GTS_OBJECT_CLASS (gfs_init_class ())->parent_class->read) 
+event.c:  if (GTS_OBJECT_CLASS (gfs_init_class ())->parent_class->write)
+event.c:    (* GTS_OBJECT_CLASS (gfs_init_class ())->parent_class->write) 
+event.c:  (* GTS_OBJECT_CLASS (gfs_init_class ())->parent_class->destroy) 
+event.c:  (* GTS_OBJECT_CLASS (gfs_init_mask_class ())->parent_class->read) (o, fp);
+event.c:  (* GTS_OBJECT_CLASS (gfs_init_mask_class ())->parent_class->write) (o, fp);
+event.c:  (* GTS_OBJECT_CLASS (gfs_init_mask_class ())->parent_class->destroy) (object);
+event.c:  if (GTS_OBJECT_CLASS (gfs_init_flow_constant_class ())->parent_class->read)
+event.c:    (* GTS_OBJECT_CLASS (gfs_init_flow_constant_class ())->parent_class->read) 
+event.c:  if (GTS_OBJECT_CLASS (gfs_init_vorticity_class ())->parent_class->read)
+event.c:    (* GTS_OBJECT_CLASS (gfs_init_vorticity_class ())->parent_class->read) 
+event.c:  (* GTS_OBJECT_CLASS (gfs_init_vorticity_class ())->parent_class->write) (o, fp);
+event.c:  (* GTS_OBJECT_CLASS (gfs_init_vorticity_class ())->parent_class->destroy) (object);
+event.c:  klass->read = gfs_init_vorticity_read;
+event.c:  klass->write = gfs_init_vorticity_write;
+event.c:  klass->destroy = gfs_init_vorticity_destroy;
+event.c:  gts_object_destroy (GTS_OBJECT (s->v));
+event.c:  (* GTS_OBJECT_CLASS (gfs_event_sum_class ())->parent_class->destroy) (o);
+event.c:  (* GTS_OBJECT_CLASS (gfs_event_sum_class ())->parent_class->write) (o, fp);
+event.c:  gfs_function_write (s->v, fp);
+event.c:  fprintf (fp, " %s", s->sv->name);
+event.c:  (* GTS_OBJECT_CLASS (gfs_event_sum_class ())->parent_class->read) (o, fp);
+event.c:  gfs_function_read (s->v, domain, fp);
+event.c:  if (!(s->sv = gfs_domain_get_or_add_variable (domain, fp->token->str, "Sum"))) {
+event.c:    if (s->last < 0.)
+event.c:      gfs_domain_traverse_layers (GFS_DOMAIN (sim), (FttCellTraverseFunc) gfs_cell_reset, s->sv);
+event.c:      s->dt = sim->time.t - s->last;
+event.c:      gfs_domain_traverse_layers (GFS_DOMAIN (sim), s->sum, s);
+event.c:      gfs_restore_fpe_for_function (s->v);
+event.c:    s->last = sim->time.t;
+event.c:  GFS_VALUE (cell, s->sv) += s->dt*gfs_function_value (s->v, cell);
+event.c:  (* GTS_OBJECT_CLASS (gfs_event_sum_direction_class ())->parent_class->write) (o, fp);
+event.c:  fprintf (fp, " %s", ftt_direction_name [s->d]);
+event.c:  (* GTS_OBJECT_CLASS (gfs_event_sum_direction_class ())->parent_class->read) (o, fp);
+event.c:  s->d = ftt_direction_from_name (fp->token->str);
+event.c:  if (s->d >= FTT_NEIGHBORS) {
+event.c:    s->d = 0;
+event.c:    gfs_domain_sum (GFS_DOMAIN (sim), s->d, GFS_EVENT_SUM (event)->v, GFS_EVENT_SUM (event)->sv);
+event.c:  if (s->Mn)
+event.c:    gfs_matrix_free (s->Mn);
+event.c:  if (s->M)
+event.c:    gfs_matrix_free (s->M);
+event.c:  if (s->iM)
+event.c:    gfs_matrix_free (s->iM);
+event.c:  g_free (s->A);
+event.c:  g_free (s->B);
+event.c:  g_free (s->vsin);
+event.c:  g_free (s->vcos);
+event.c:  g_free (s->x);
+event.c:  g_free (s->a);
+event.c:  g_free (s->Aname);
+event.c:  g_free (s->Bname);
+event.c:  g_array_free (s->omega, TRUE);
+event.c:  (* GTS_OBJECT_CLASS (gfs_event_harmonic_class ())->parent_class->destroy) (o);
+event.c:  (* GTS_OBJECT_CLASS (gfs_event_harmonic_class ())->parent_class->write) (o, fp);
+event.c:  fprintf (fp, " %s %s %s %s", s->v->name, s->Aname, s->Bname, s->z->name);
+event.c:  if (s->e)
+event.c:    fprintf (fp, " %s", s->e->name);
+event.c:  for (i = 0; i < s->omega->len; i++)
+event.c:    fprintf (fp, " %.12lf", g_array_index (s->omega, gdouble, i));
+event.c:  fprintf (fp, " { %d", s->invertible);
+event.c:  for (i = 0; i < 2*s->omega->len + 1; i++)
+event.c:    for (j = 0; j < 2*s->omega->len + 1; j++)
+event.c:      fprintf (fp, " %.12lf", s->M[i][j]);
+event.c:  (* GTS_OBJECT_CLASS (gfs_event_harmonic_class ())->parent_class->read) (o, fp);
+event.c:  if (!(s->v = gfs_variable_from_name (domain->variables, fp->token->str))) {
+event.c:  s->Aname = g_strdup (fp->token->str);  
+event.c:  s->Bname = g_strdup (fp->token->str);
+event.c:  if (!(s->z = gfs_domain_get_or_add_variable (domain, fp->token->str, 
+event.c:  s->z->units = s->v->units;
+event.c:    if (!(s->e = gfs_domain_get_or_add_variable (domain, fp->token->str, 
+event.c:    s->e->units = 2.*s->v->units;
+event.c:    g_array_append_val (s->omega, omega);
+event.c:  s->Mn = gfs_matrix_new (2*s->omega->len + 1, 2*s->omega->len + 1, sizeof (gdouble));
+event.c:  for (i = 0; i < 2*s->omega->len + 1; i++)
+event.c:    s->Mn[i][i] = 1.;
+event.c:  s->M  = gfs_matrix_new (2*s->omega->len + 1, 2*s->omega->len + 1, sizeof (gdouble));
+event.c:  s->iM = gfs_matrix_new (2*s->omega->len + 1, 2*s->omega->len + 1, sizeof (gdouble));
+event.c:  s->A =    g_malloc (sizeof (GfsVariable *)*s->omega->len);
+event.c:  s->B =    g_malloc (sizeof (GfsVariable *)*s->omega->len);
+event.c:  s->vsin = g_malloc (sizeof (gdouble)*s->omega->len);
+event.c:  s->vcos = g_malloc (sizeof (gdouble)*s->omega->len);
+event.c:  s->x    = g_malloc (sizeof (gdouble)*(2*s->omega->len + 1));
+event.c:  s->a    = g_malloc (sizeof (gdouble)*(2*s->omega->len + 1));
+event.c:  for (i = 0; i < s->omega->len; i++) {
+event.c:    u = g_strdup_printf ("%s%d", s->Aname, i);
+event.c:    if (!(s->A[i] = gfs_domain_get_or_add_variable (domain, u, 
+event.c:    s->A[i]->units = s->v->units;
+event.c:    u = g_strdup_printf ("%s%d", s->Bname, i);
+event.c:    if (!(s->B[i] = gfs_domain_get_or_add_variable (domain, u,
+event.c:    s->B[i]->units = s->v->units;
+event.c:    guint n = 2*s->omega->len + 1;
+event.c:    s->invertible = atoi (fp->token->str);
+event.c:	  s->M[i][j] = atof (fp->token->str);
+event.c:    if (s->invertible)
+event.c:	  s->Mn[i][j] = s->M[i][j];
+event.c:  klass->destroy = gfs_event_harmonic_destroy;
+event.c:  klass->read = gfs_event_harmonic_read;
+event.c:  klass->write = gfs_event_harmonic_write;
+event.c:  if (GTS_OBJECT_CLASS (gfs_event_stop_class ())->parent_class->write)
+event.c:    (* GTS_OBJECT_CLASS (gfs_event_stop_class ())->parent_class->write)
+event.c:  fprintf (fp, " %s %g", s->v->name, s->max);
+event.c:  if (s->diff)
+event.c:    fprintf (fp, " %s", s->diff->name);
+event.c:  if (s->relative)
+event.c:  if (GTS_OBJECT_CLASS (gfs_event_stop_class ())->parent_class->read)
+event.c:    (* GTS_OBJECT_CLASS (gfs_event_stop_class ())->parent_class->read) 
+event.c:  if (!(s->v = gfs_variable_from_name (domain->variables, fp->token->str))) {
+event.c:  s->max = gfs_read_constant (fp, domain);
+event.c:  s->oldv = gfs_domain_add_variable (domain, NULL, NULL);
+event.c:   * but will crash if s->oldv is not of the same class as s->v.
+event.c:   * s->oldv->fine_coarse = s->v->fine_coarse;
+event.c:   * s->oldv->coarse_fine = s->v->coarse_fine;
+event.c:    if (!(s->diff = gfs_domain_get_or_add_variable (domain, fp->token->str, 
+event.c:    s->diff->units = s->v->units;
+event.c:      {GTS_INT, "relative", TRUE, &s->relative},
+event.c:  (* GTS_OBJECT_CLASS (gfs_event_stop_class ())->parent_class->destroy) (o);
+event.c:  GFS_VALUE (cell, s->oldv) -= GFS_VALUE (cell, s->v);
+event.c:  GFS_VALUE (cell, s->oldv) = GFS_VALUE (cell, s->v);
+event.c:    if (s->last >= 0.) {
+event.c:      if (s->relative) {
+event.c:	n = gfs_domain_norm_variable (domain, s->oldv, NULL, FTT_TRAVERSE_LEAFS, -1, NULL, NULL);
+event.c:      n = gfs_domain_norm_variable (domain, s->oldv, NULL, FTT_TRAVERSE_LEAFS, -1, NULL, NULL);
+event.c:      if (s->relative) {
+event.c:	if (n.infty <= s->max*max)
+event.c:      else if (gfs_dimensional_value (s->v, n.infty) <= s->max)
+event.c:      if (s->diff) {
+event.c:	gfs_variables_swap (s->diff, s->oldv);
+event.c:	gfs_domain_bc (domain, FTT_TRAVERSE_LEAFS, -1, s->diff);
+event.c:    gfs_domain_copy_bc (domain, FTT_TRAVERSE_LEAFS, -1, s->v, s->oldv);
+event.c:    s->last = sim->time.t;
+event.c:  g_free (s->script);
+event.c:  (* GTS_OBJECT_CLASS (gfs_event_script_class ())->parent_class->destroy) (o);
+event.c:  if (GTS_OBJECT_CLASS (gfs_event_script_class ())->parent_class->write)
+event.c:    (* GTS_OBJECT_CLASS (gfs_event_script_class ())->parent_class->write)
+event.c:  if (s->script)
+event.c:    fputs (s->script, fp);
+event.c:  if (GTS_OBJECT_CLASS (gfs_event_script_class ())->parent_class->read)
+event.c:    (* GTS_OBJECT_CLASS (gfs_event_script_class ())->parent_class->read) 
+event.c:  g_free (s->script);
+event.c:  if ((s->script = gfs_file_statement (fp)))
+event.c:    if (s->script && GFS_DOMAIN (sim)->pid <= 0) {
+event.c:      FILE * fp = gfs_popen (sim, s->script, "w");
+event.c:  (* GTS_OBJECT_CLASS (gfs_init_fraction_class ())->parent_class->destroy) 
+event.c:  if (GTS_OBJECT_CLASS (gfs_init_fraction_class ())->parent_class->read)
+event.c:    (* GTS_OBJECT_CLASS (gfs_init_fraction_class ())->parent_class->read) 
+event.c:  (* GTS_OBJECT_CLASS (gfs_init_fraction_class ())->parent_class->write) (o, fp);
+event.c:  (* GTS_OBJECT_CLASS (gfs_remove_droplets_class ())->parent_class->destroy) (object);
+event.c:  if (GTS_OBJECT_CLASS (gfs_remove_droplets_class ())->parent_class->read)
+event.c:    (* GTS_OBJECT_CLASS (gfs_remove_droplets_class ())->parent_class->read) 
+event.c:  if (GTS_OBJECT_CLASS (gfs_remove_droplets_class ())->parent_class->write)
+event.c:    (* GTS_OBJECT_CLASS (gfs_remove_droplets_class ())->parent_class->write) 
+event.c:  if (GTS_OBJECT_CLASS (gfs_remove_ponds_class ())->parent_class->read)
+event.c:    (* GTS_OBJECT_CLASS (gfs_remove_ponds_class ())->parent_class->read) 
+event.c:  if (GTS_OBJECT_CLASS (gfs_remove_ponds_class ())->parent_class->write)
+event.c:    (* GTS_OBJECT_CLASS (gfs_remove_ponds_class ())->parent_class->write) (o, fp);
+event.c:  if (GTS_OBJECT_CLASS (gfs_event_filter_class ())->parent_class->read)
+event.c:    (* GTS_OBJECT_CLASS (gfs_event_filter_class ())->parent_class->read) 
+event.c:  if (GTS_OBJECT_CLASS (gfs_event_filter_class ())->parent_class->write)
+event.c:    (* GTS_OBJECT_CLASS (gfs_event_filter_class ())->parent_class->write) 
+event.c:  (* GTS_OBJECT_CLASS (gfs_event_list_class ())->parent_class->read) (o, fp);
+event.c:    (* klass->read) (&object, fp);
+event.c:  (* GTS_OBJECT_CLASS (gfs_event_list_class ())->parent_class->write) (o, fp);
+event.c:    fprintf (fp, " %s", l->klass->info.name);
+event.c:    (* GTS_OBJECT (i->data)->klass->write) (i->data, fp);
+event.c:  (* GTS_OBJECT_CLASS (gfs_event_list_class ())->parent_class->destroy) (o);
+fluid.c:    d[i] = s->s[2*cp] > s->s[2*cp + 1] ? 2*cp : 2*cp + 1;
+fluid.c:  if ((s->s[FTT_RIGHT] == 0. && s->s[FTT_LEFT] == 0.) ||
+fluid.c:      (s->s[FTT_RIGHT] == 1. && s->s[FTT_LEFT] == 1.))
+fluid.c:    d[c] = s->s[2*c] > s->s[2*c + 1] ? 2*c : 2*c + 1;
+fluid.c:          printf("%f, ",s->s[i]);
+fluid.c:    return g.x*s->v.x + g.y*s->v.y + g.z*s->v.z;
+fluid.c:    gfs_cell_dirichlet_gradient_stencil (cell, max_level, v0, &g, lp, stencil, &s->v);
+fluid.c:    return g.x*s->v.x + g.y*s->v.y + g.z*s->v.z;
+fluid.c:    p.x = (s->ca.x - p.x)/size;
+fluid.c:    p.y = (s->ca.y - p.y)/size;
+fluid.c:    p.z = (s->ca.z - p.z)/size;
+fluid.c:  s->id = g_array_new (FALSE, FALSE, sizeof (int));
+fluid.c:  s->coeff = g_array_new (FALSE, FALSE, sizeof (double));
+ftt.c:  pos->x = coords[n][0]/4.;
+ftt.c:  pos->y = coords[n][1]/4.;
+ftt.c:  pos->z = coords[n][2]/4.;
+ftt.c:    pos->x = cell->parent->pos.x + coords[n][0]*size;
+ftt.c:    pos->y = cell->parent->pos.y + coords[n][1]*size;
+ftt.c:    pos->z = cell->parent->pos.z + coords[n][2]*size;
+ftt.c:  printf("Position of first interior cell is (%f,%f,%f)\n",pos->x,pos->y,pos->z);
+ftt.c:  pos->x = coords[d[0]][0] + coords[d[1]][0];
+ftt.c:  pos->y = coords[d[0]][1] + coords[d[1]][1];
+ftt.c:  pos->z = 0.;
+ftt.c:  pos->x = coords[d[0]][0] + coords[d[1]][0] + coords[d[2]][0];
+ftt.c:  pos->y = coords[d[0]][1] + coords[d[1]][1] + coords[d[2]][1];
+ftt.c:  pos->z = coords[d[0]][2] + coords[d[1]][2] + coords[d[2]][2];
+ftt.c:  pos->x = p.x + size*pos->x;
+ftt.c:  pos->y = p.y + size*pos->y;
+ftt.c:  pos->z = p.z + size*pos->z;
+ftt.c:  pos->x += size*coords[face->d][0];
+ftt.c:  pos->y += size*coords[face->d][1];
+ftt.c:  pos->z += size*coords[face->d][2];
+gerris.c:  if (events->len > 0) {
+gerris.c:    for (i = 0; i < events->len; i++) {
+gerris.c:      g_assert (klass->read);
+gerris.c:      (* klass->read) (&object, fp);
+graphic.c:  for (i = 0; i < colormap->colors->len; i++)
+graphic.c:    color_destroy (colormap->colors->pdata[i]);
+graphic.c:  n = cmap->colors->len;
+graphic.c:    return *((GtsColor *)cmap->colors->pdata[0]);
+graphic.c:    return *((GtsColor *)cmap->colors->pdata[cmap->colors->len - 1]);
+graphic.c:  c1 = cmap->colors->pdata[i];
+graphic.c:  c2 = cmap->colors->pdata[i+1];
+graphic.c:  v = gts_vertex_new (s->vertex_class, pos.x, pos.y, pos.z);
+graphic.c:  v = gts_vertex_new (s->vertex_class, pos.x, pos.y, pos.z);
+graphic.c:  FttCell * c1 = VERTEX_CELL_FACE (s->v1)->cell ? VERTEX_CELL_FACE (s->v1)->cell :
+graphic.c:    VERTEX_CELL_FACE (s->v1)->face.cell;
+graphic.c:  FttCell * c2 = VERTEX_CELL_FACE (s->v2)->cell ? VERTEX_CELL_FACE (s->v2)->cell :
+graphic.c:    VERTEX_CELL_FACE (s->v2)->face.cell;
+graphic.c:  if (gts_point_distance2 (GTS_POINT (s->v1), GTS_POINT (s->v2)) > 
+graphic.c:      if (o->klass->color) {
+graphic.c:	GtsColor c = (* o->klass->color) (o);
+graphic.c:  old_color = GTS_OBJECT_CLASS (s->vertex_class)->color;
+graphic.c:  GTS_OBJECT_CLASS (s->vertex_class)->color = variable_color;
+graphic.c:  GTS_OBJECT_CLASS (s->vertex_class)->color = old_color;
+graphic.c:  if (GTS_OBJECT_CLASS (gts_colored_vertex_class ())->parent_class->read)
+graphic.c:    (* GTS_OBJECT_CLASS (gts_colored_vertex_class ())->parent_class->read) 
+graphic.c:  if (GTS_OBJECT_CLASS (gts_colored_vertex_class ())->parent_class->write)
+graphic.c:    (* GTS_OBJECT_CLASS (gts_colored_vertex_class ())->parent_class->write) 
+graphic.c:  if (GTS_OBJECT_CLASS (gts_colored_vertex_class ())->parent_class->read)
+graphic.c:    (* GTS_OBJECT_CLASS (gts_colored_vertex_class ())->parent_class->read) 
+graphic.c:  if (GTS_OBJECT_CLASS (gts_colored_vertex_class ())->parent_class->write)
+graphic.c:    (* GTS_OBJECT_CLASS (gts_colored_vertex_class ())->parent_class->write)
+graphic.c:  if (GTS_OBJECT_CLASS (gfs_twisted_vertex_class ())->parent_class->read)
+graphic.c:    (* GTS_OBJECT_CLASS (gfs_twisted_vertex_class ())->parent_class->read) 
+graphic.c:  if (GTS_OBJECT_CLASS (gfs_twisted_vertex_class ())->parent_class->write)
+graphic.c:    (* GTS_OBJECT_CLASS (gfs_twisted_vertex_class ())->parent_class->write)
+graphic.c:      gts_object_class_is_from_class (GTS_OBJECT_CLASS (s->vertex_class),
+graphic.c:    GtsVertex * v = gts_vertex_new (s->vertex_class, p->x, p->y, 0.);
+graphic.c:      e[i-1] = gts_edge_new (s->edge_class, vold, v);
+graphic.c:    e[i-1] = gts_edge_new (s->edge_class, vold, vfirst);
+graphic.c:    GtsEdge * e3 = gts_edge_new (s->edge_class, v1, v3);
+graphic.c:      e4 = gts_edge_new (s->edge_class, v1, v2);
+graphic.c:      e5 = gts_edge_new (s->edge_class, v3, v4);
+graphic.c:    gts_surface_add_face (s, gts_face_new (s->face_class, e4, e2[i], e3));
+graphic.c:    gts_surface_add_face (s, gts_face_new (s->face_class, e3, e5, e1[i]));
+graphic.c:    (* GTS_OBJECT (stream->data)->klass->write) (stream->data, fp);
+graphic.c:    (*o->klass->read) (&o, fp);
+init.c:  fprintf (stderr, "\n%s-%s **: %s%s\n\n", 
+levelset.c:  (* GTS_OBJECT_CLASS (gfs_variable_distance_class ())->parent_class->read) (o, fp);
+levelset.c:  (* GTS_OBJECT_CLASS (gfs_variable_distance_class ())->parent_class->write) (o, fp);
+levelset.c:  klass->read = variable_distance_read;
+levelset.c:  klass->write = variable_distance_write;
+map.c:  fprintf (fp, "  %s", o->klass->info.name);
+map.c:    (&f->x)[i] -= (&rhs->x)[i];
+map.c:      J[i][j] = ((&df.x)[i] - (&rhs->x)[i] - (&f->x)[i])/DELTA;
+map.c:  (* GTS_OBJECT_CLASS (gfs_map_function_class ())->parent_class->read) (o, fp);
+map.c:  (* GTS_OBJECT_CLASS (gfs_map_function_class ())->parent_class->write) (o, fp);
+map.c:  (* GTS_OBJECT_CLASS (gfs_map_function_class ())->parent_class->destroy) (o);
+map.c:  (* GTS_OBJECT_CLASS (gfs_map_transform_class ())->parent_class->destroy) (o);
+map.c:  (* GTS_OBJECT_CLASS (gfs_map_transform_class ())->parent_class->read) (o, fp);
+map.c:  (* GTS_OBJECT_CLASS (gfs_map_transform_class ())->parent_class->write) (o, fp);
+map.c:  klass->destroy = gfs_map_transform_destroy;
+map.c:  klass->read = gfs_map_transform_read;
+map.c:  klass->write = gfs_map_transform_write;
+metric.c:/* see: doc/figures/viscous-metric.tm equation (4) */
+metric.c:/* see: doc/figures/viscous-metric.tm equation (4) */
+metric.c:  (* GTS_OBJECT_CLASS (gfs_generic_metric_class ())->parent_class->read) (o, fp);
+metric.c:  klass->read = generic_metric_read;
+metric.c:  (* GTS_OBJECT_CLASS (gfs_variable_metric_class ())->parent_class->read) (o, fp);
+metric.c:  klass->read = variable_metric_read;
+metric.c:	       /* the cross-term should be zero for an orthogonal
+metric.c:  (* GTS_OBJECT_CLASS (gfs_stored_metric_class ())->parent_class->read) (o, fp);
+metric.c:  klass->read = stored_metric_read;
+metric.c:  (* GTS_OBJECT_CLASS (gfs_metric_class ())->parent_class->write) (o, fp);
+metric.c:  (* GTS_OBJECT_CLASS (gfs_metric_class ())->parent_class->destroy) (o);
+metric.c:  (* GTS_OBJECT_CLASS (gfs_metric_class ())->parent_class->read) (o, fp);
+metric.c:  klass->destroy = metric_destroy;
+metric.c:  klass->read = metric_read;
+metric.c:  klass->write = metric_write;
+metric.c:    (&f->x)[i] -= (&rhs->x)[i];
+metric.c:      J[i][j] = ((&df.x)[i] - (&rhs->x)[i] - (&f->x)[i])/DELTA;
+metric.c:  (* GTS_OBJECT_CLASS (gfs_metric_cubed_class ())->parent_class->write) (o, fp);
+metric.c:  (* GTS_OBJECT_CLASS (gfs_metric_cubed_class ())->parent_class->read) (o, fp);
+metric.c:  klass->read = metric_cubed_read;
+metric.c:  klass->write = metric_cubed_write;
+metric.c:  (* GTS_OBJECT_CLASS (gfs_metric_lon_lat_class ())->parent_class->write) (o, fp);
+metric.c:  (* GTS_OBJECT_CLASS (gfs_metric_lon_lat_class ())->parent_class->read) (o, fp);
+metric.c:  klass->read = metric_lon_lat_read;
+metric.c:  klass->write = metric_lon_lat_write;
+metric.c:  (* GTS_OBJECT_CLASS (gfs_metric_stretch_class ())->parent_class->write) (o, fp);
+metric.c:  case FTT_X: return s->sy;
+metric.c:  case FTT_Y: return s->sx;
+metric.c:  case FTT_X: return s->sy*s->sz;
+metric.c:  case FTT_Y: return s->sx*s->sz;
+metric.c:  case FTT_Z: return s->sx*s->sy;
+metric.c:  return s->sx*s->sy;
+metric.c:  return s->sx*s->sy*s->sz;
+metric.c:  m->x = s->sy/s->sx;
+metric.c:  m->y = s->sx/s->sy;
+metric.c:  m->x = s->sy*s->sz/s->sx;
+metric.c:  m->y = s->sx*s->sz/s->sy;
+metric.c:  m->z = s->sx*s->sy/s->sz;
+metric.c:  (* GTS_OBJECT_CLASS (gfs_metric_stretch_class ())->parent_class->read) (o, fp);
+metric.c:      {GTS_DOUBLE, "sx", TRUE, &s->sx},
+metric.c:      {GTS_DOUBLE, "sy", TRUE, &s->sy},
+metric.c:      {GTS_DOUBLE, "sz", TRUE, &s->sz},
+metric.c:    if (s->sx <= 0. || s->sy <= 0. || s->sz <= 0.) {
+metric.c:  klass->read = metric_stretch_read;
+metric.c:  klass->write = metric_stretch_write;
+metric.c:  (* GTS_OBJECT_CLASS (gfs_metric_variable_class ())->parent_class->read) (o, fp);
+metric.c:  klass->read = metric_variable_read;
+metric.c:  (* GTS_OBJECT_CLASS (gfs_metric_laplace_class ())->parent_class->read) (o, fp);
+metric.c:  (* GTS_OBJECT_CLASS (gfs_metric_laplace_class ())->parent_class->write) (o, fp);
+metric.c:  klass->read = metric_laplace_read;
+metric.c:  klass->write = metric_laplace_write;
+moving.c:  (* GTS_OBJECT_CLASS (gfs_numbered_vertex_class ())->parent_class->read) (o, f);
+moving.c:  klass->read = numbered_vertex_read;
+moving.c:    if (s && s->s[FTT_OPPOSITE_DIRECTION (boundary->d)] == 0.) {
+moving.c:      t->a = s->a;
+moving.c:	  t->s[d] = s->s[FTT_OPPOSITE_DIRECTION (d)];
+moving.c:	  t->s[d] = s->s[d];
+moving.c:	  (&t->cm.x)[c] = (&p1.x)[c] + (&p2.x)[c] - (&s->cm.x)[c];
+moving.c:	  (&t->ca.x)[c] = (&p1.x)[c] + (&p2.x)[c] - (&s->ca.x)[c];
+moving.c:	  (&t->cm.x)[c] = (&s->cm.x)[c];
+moving.c:	  (&t->ca.x)[c] = (&s->ca.x)[c];
+moving.c:  (* GTS_OBJECT_CLASS (gfs_solid_moving_class ())->parent_class->destroy) (object);
+moving.c:  if (GTS_OBJECT_CLASS (gfs_solid_moving_class ())->parent_class->read)
+moving.c:    (* GTS_OBJECT_CLASS (gfs_solid_moving_class ())->parent_class->read) 
+moving.c:  if (GTS_OBJECT_CLASS (gfs_solid_moving_class ())->parent_class->write)
+moving.c:    (* GTS_OBJECT_CLASS (gfs_solid_moving_class ())->parent_class->write) 
+moving.c:  if (s && !f->neighbor && s->s[f->d] > 0. && s->s[f->d] < 1.)
+moving.c:  klass->event = solid_moving_event;
+moving.c:    if (GFS_IS_SOLID_MOVING (s->data) && GFS_SOLID_MOVING (s->data)->active)
+moving.c:      solid_move_remesh (s->data, sim);
+moving.c:    s = s->next;
+moving.c:  klass->run = simulation_moving_run;
+mpi_boundary.c:  (* GTS_OBJECT_CLASS (gfs_boundary_mpi_class ())->parent_class->write) (o, fp);
+mpi_boundary.c:  klass->send        = send;
+mpi_boundary.c:  klass->receive     = receive;
+mpi_boundary.c:  klass->synchronize = synchronize;
+ocean.c:  klass->run = ocean_run;
+ocean.c:  (* GTS_OBJECT_CLASS (gfs_ocean_class ())->parent_class->destroy) (object);  
+ocean.c:  (* GTS_OBJECT_CLASS (gfs_ocean_class ())->parent_class->read) (object, fp);
+ocean.c:  (* GTS_OBJECT_CLASS (gfs_ocean_class ())->parent_class->write) (object, fp);
+ocean.c:    s->f[FTT_BACK].un = w;
+ocean.c:    wf += (s->f[FTT_LEFT].v*s->f[FTT_LEFT].un - s->f[FTT_RIGHT].v*s->f[FTT_RIGHT].un +
+ocean.c:    	   s->f[FTT_BOTTOM].v*s->f[FTT_BOTTOM].un - s->f[FTT_TOP].v*s->f[FTT_TOP].un);
+ocean.c:      s->f[FTT_FRONT].un = w = GFS_STATE (c)->solid->s[FTT_FRONT] > 0. ? 
+ocean.c:      s->f[FTT_FRONT].un = w = wf;
+ocean.c:    GFS_VALUE (c, W) = (s->f[FTT_BACK].un + s->f[FTT_FRONT].un)/2.;
+ocean.c:    GfsSolidVector * solid = s->solid;
+ocean.c:      wf += (solid->s[FTT_RIGHT]*s->f[FTT_RIGHT].un - solid->s[FTT_LEFT]*s->f[FTT_LEFT].un +
+ocean.c:	     solid->s[FTT_TOP]*s->f[FTT_TOP].un - solid->s[FTT_BOTTOM]*s->f[FTT_BOTTOM].un);
+ocean.c:      wf += (s->f[FTT_RIGHT].un - s->f[FTT_LEFT].un +
+ocean.c:	     s->f[FTT_TOP].un - s->f[FTT_BOTTOM].un);
+ocean.c:      wf[d] += s->f[d].v*size;
+ocean.c:      s->f[d].v = wf[d];
+ocean.c:  klass->run = ocean_run;
+ocean.c:  (* GTS_OBJECT_CLASS (gfs_source_hydrostatic_class ())->parent_class->destroy) (o);
+ocean.c:  if (GTS_OBJECT_CLASS (gfs_source_hydrostatic_class ())->parent_class->read)
+ocean.c:    (* GTS_OBJECT_CLASS (gfs_source_hydrostatic_class ())->parent_class->read) (o, fp);
+ocean.c:  (* GTS_OBJECT_CLASS (gfs_source_hydrostatic_class ())->parent_class->write) (o, fp);
+ocean.c:  GFS_VALUE (cell, s->ph1) = GFS_VALUE (cell, s->ph);
+ocean.c:    if (s->not_first) {
+ocean.c:      gfs_domain_bc (GFS_DOMAIN (sim), FTT_TRAVERSE_LEAFS, -1, s->ph1);
+ocean.c:      gfs_hydrostatic_pressure (GFS_DOMAIN (sim), s->ph1, s->rho, sim->physical_params.g);
+ocean.c:      gfs_domain_bc (GFS_DOMAIN (sim), FTT_TRAVERSE_LEAFS, -1, s->ph1);
+ocean.c:      s->not_first = TRUE;
+ocean.c:  gfs_hydrostatic_pressure (GFS_DOMAIN (sim), s->ph, s->rho, sim->physical_params.g);
+ocean.c:  gfs_domain_bc (GFS_DOMAIN (sim), FTT_TRAVERSE_LEAFS, -1, s->ph);
+ocean.c:  s->mac_value = gfs_source_hydrostatic_mac_value;
+ocean.c:  s->centered_value = gfs_source_hydrostatic_centered_value;
+ocean.c:  (* GTS_OBJECT_CLASS (gfs_source_friction_class ())->parent_class->destroy) (o);
+ocean.c:  (* GTS_OBJECT_CLASS (gfs_source_friction_class ())->parent_class->read) (o, fp);
+ocean.c:  (* GTS_OBJECT_CLASS (gfs_source_friction_class ())->parent_class->write) (o, fp);
+ocean.c:    GFS_VALUE (cell, s->u[c]) = GFS_VALUE (cell, GFS_SOURCE_VELOCITY (s)->v[c]);
+ocean.c:  s->mac_value = s->centered_value = gfs_source_friction_saved_value;
+ocean.c:  (* GTS_OBJECT_CLASS (gfs_bc_flather_class ())->parent_class->write) (o, fp);
+ocean.c:  (* GTS_OBJECT_CLASS (gfs_bc_flather_class ())->parent_class->read) (o, fp);
+ocean.c:  (* GTS_OBJECT_CLASS (gfs_bc_flather_class ())->parent_class->destroy) (o);
+ocean.c:  klass->write   = bc_flather_write;
+ocean.c:  klass->read    = bc_flather_read;
+ocean.c:  klass->destroy = bc_flather_destroy;
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_class ())->parent_class->destroy) 
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_class ())->parent_class->write) (o, fp);
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_class ())->parent_class->read) (o, fp);
+output.c:  klass->event = time_event;
+output.c:  klass->event = progress_event;
+output.c:  klass->event = projection_stats_event;
+output.c:  klass->event = diffusion_stats_event;
+output.c:  klass->event = timing_event;
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_solid_force_class ())->parent_class->destroy) (object);
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_solid_force_class ())->parent_class->read) (o, fp);
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_solid_force_class ())->parent_class->write) (o, fp);
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_location_class ())->parent_class->destroy) (object);
+output.c:  if (GTS_OBJECT_CLASS (gfs_output_location_class ())->parent_class->read)
+output.c:    (* GTS_OBJECT_CLASS (gfs_output_location_class ())->parent_class->read) 
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_location_class ())->parent_class->write) (o, fp);
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_simulation_class ())->parent_class->destroy) (object);
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_simulation_class ())->parent_class->write) (o, fp);
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_simulation_class ())->parent_class->read) (o, fp);
+output.c:  klass->event = output_simulation_event;
+output.c:  klass->event = output_boundaries_event;
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_scalar_class ())->parent_class->destroy) (o);
+output.c:  if (GTS_OBJECT_CLASS (gfs_output_scalar_class ())->parent_class->read)
+output.c:    (* GTS_OBJECT_CLASS (gfs_output_scalar_class ())->parent_class->read) 
+output.c:  if (GTS_OBJECT_CLASS (gfs_output_scalar_class ())->parent_class->write)
+output.c:    (* GTS_OBJECT_CLASS (gfs_output_scalar_class ())->parent_class->write) 
+output.c:  gdouble vol = s->w ? gfs_function_value (s->w, cell) : gfs_cell_volume (cell, s->v->domain);
+output.c:  s->sum += vol*GFS_VALUE (cell, s->v);
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_scalar_maxima_class ())->parent_class->destroy) (o);
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_scalar_maxima_class ())->parent_class->read) (o, fp);
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_scalar_maxima_class ())->parent_class->write) (o, fp);
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_scalar_histogram_class ())->parent_class->destroy) (o);
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_scalar_histogram_class ())->parent_class->read) (o, fp);
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_scalar_histogram_class ())->parent_class->write) (o, fp);
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_droplet_sums_class ())->parent_class->destroy) (object);
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_droplet_sums_class ())->parent_class->read) (o, fp);
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_droplet_sums_class ())->parent_class->write) (o, fp);
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_error_norm_class ())->parent_class->destroy) (o);
+output.c:  if (GTS_OBJECT_CLASS (gfs_output_error_norm_class ())->parent_class->read)
+output.c:    (* GTS_OBJECT_CLASS (gfs_output_error_norm_class ())->parent_class->read) (o, fp);
+output.c:  if (GTS_OBJECT_CLASS (gfs_output_error_norm_class ())->parent_class->write)
+output.c:    (* GTS_OBJECT_CLASS (gfs_output_error_norm_class ())->parent_class->write) 
+output.c:  if (GTS_OBJECT_CLASS (gfs_output_streamline_class ())->parent_class->read)
+output.c:    (* GTS_OBJECT_CLASS (gfs_output_streamline_class ())->parent_class->read) 
+output.c:  if (GTS_OBJECT_CLASS (gfs_output_streamline_class ())->parent_class->write)
+output.c:    (* GTS_OBJECT_CLASS (gfs_output_streamline_class ())->parent_class->write) 
+output.c:  if (GTS_OBJECT_CLASS (gfs_output_ppm_class ())->parent_class->read)
+output.c:    (* GTS_OBJECT_CLASS (gfs_output_ppm_class ())->parent_class->read) 
+output.c:  (* GTS_OBJECT_CLASS (gfs_output_object_class ())->parent_class->write) (o, fp);
+output.c:    object->klass->write (object, fp);
+poisson.c:  MPI_Allgather (&lp->rhs->len, 1, MPI_UNSIGNED, mpi_domain_index, 1, MPI_UNSIGNED, MPI_COMM_WORLD);
+poisson.c:      for (i = 0; i < lp->rhs->len; i++) {
+poisson.c:  p.rhs = rhs->i;
+poisson.c:  p.rhs = rhs->i;
+poisson.c:  p.res = res->i;
+poisson.c:	(&s->v.x)[c] += alpha*(&m.x)[c]*(s->s[2*c + 1] - s->s[2*c]);
+poisson.c:  q.rhs = res->i;
+poisson.c:	(&s->v.x)[i] = diffusion*(&m.x)[i]*(s->s[2*i + 1] - s->s[2*i]);
+poisson.c:  p.rhs = rhs->i;
+poisson.c:  p.rhs = rhs->i;
+poisson.c:  p.res = res->i;
+poisson.c:  p.res = res->i;
+refine.c:  (* GTS_OBJECT_CLASS (gfs_refine_class ())->parent_class->destroy) (o);
+refine.c:  fprintf (fp, "%s", object->klass->info.name);
+refine.c:  if (class_changed && fp->type != '\n' && klass->read)
+refine.c:    (* klass->read) (o, fp);
+refine.c:  klass->refine = gfs_refine_refine;
+refine.c:  (* GTS_OBJECT_CLASS (gfs_refine_solid_class ())->parent_class->destroy) (object);
+refine.c:  (* GTS_OBJECT_CLASS (gfs_refine_solid_class ())->parent_class->read) (o, fp);
+refine.c:    GSList * i = sim->solids->items;
+refine.c:  klass->refine = gfs_refine_solid_refine;
+refine.c:  (* GTS_OBJECT_CLASS (gfs_refine_surface_class ())->parent_class->destroy) (object);
+refine.c:  (* GTS_OBJECT_CLASS (gfs_refine_surface_class ())->parent_class->write) (o, fp);
+refine.c:  (* GTS_OBJECT_CLASS (gfs_refine_surface_class ())->parent_class->read) (o, fp);
+refine.c:  klass->refine = gfs_refine_surface_refine;
+refine.c:  (* GTS_OBJECT_CLASS (gfs_refine_distance_class ())->parent_class->destroy) (object);
+refine.c:  (* GTS_OBJECT_CLASS (gfs_refine_distance_class ())->parent_class->read) (o, fp);
+refine.c:  klass->refine = gfs_refine_refine;
+refine.c:  (* GTS_OBJECT_CLASS (gfs_refine_height_class ())->parent_class->destroy) (object);
+refine.c:  (* GTS_OBJECT_CLASS (gfs_refine_height_class ())->parent_class->read) (o, fp);
+refine.c:  klass->refine = gfs_refine_refine;
+river.c:    FttVector ca = s->ca;
+river.c:    if (s->s[2*c] < s->s[2*c + 1]) {
+river.c:	else return s->s[2*c]*g/s->s[2*c + 1];
+river.c:	return (s->s[2*c]*g + (s->s[2*c + 1] - s->s[2*c])*gs)/s->s[2*c + 1];
+river.c:    else if (s->s[2*c] > s->s[2*c + 1]) {
+river.c:	else return s->s[2*c + 1]*g/s->s[2*c];
+river.c:	return (s->s[2*c + 1]*g + (s->s[2*c] - s->s[2*c + 1])*gs)/s->s[2*c];
+river.c:  gdouble etaL = (eta <= r->dry ? 0. : left (r, face, H, a*s->du));
+river.c:		 + a*s->du*GFS_VALUE (face->cell, r->dv[face->d/2][ZB]));
+river.c:		 - b*s->du*GFS_VALUE (face->neighbor, r->dv[face->d/2][ZB])); 
+river.c:      uL[U + 2*l] = s->du*left (r, face, s->u + 2*l, a*s->du)/etal;
+river.c:      uL[V + 2*l] = s->dv*left (r, face, s->v + 2*l, a*s->du)/etal;
+river.c:	uL[T(i,l)] = left (r, face, T(i,l), a*s->du)/etal;
+river.c:  gdouble etaR = (etan <= r->dry ? 0. : right (r, face, H, b*s->du));
+river.c:      uR[U + 2*l] = s->du*right (r, face, s->u + 2*l, b*s->du)/etal;
+river.c:      uR[V + 2*l] = s->dv*right (r, face, s->v + 2*l, b*s->du)/etal;
+river.c:	uR[T(i,l)] = right (r, face, T(i,l), a*s->du)/etal;
+river.c:      GFS_VALUE (face->cell, r->flux[s->u + 2*l]) -= s->du*dt*(
+river.c:      GFS_VALUE (face->neighbor, r->flux[s->u + 2*l]) += s->du*dt*(
+river.c:      GFS_VALUE (face->cell, r->flux[s->u + 2*l]) -= s->du*dt*(f[U + 3*l] - dz*SbL);
+river.c:      GFS_VALUE (face->neighbor, r->flux[s->u + 2*l]) += s->du*dt*(f[U + 3*l] - dz*SbR)/nn;
+river.c:    GFS_VALUE (face->cell, r->flux[s->v + 2*l]) -= s->dv*dt*f[V + 3*l];
+river.c:    GFS_VALUE (face->neighbor, r->flux[s->v + 2*l]) += s->dv*dt*f[V + 3*l]/nn;
+river.c:  gdouble hs = hh + 2.*((s->ca.x - cm.x)*GFS_VALUE (cell, r->dv[0][H]) + 
+river.c:			(s->ca.y - cm.y)*GFS_VALUE (cell, r->dv[1][H]))/h;
+river.c:  gdouble zbs = 2.*((s->ca.x - cm.x)*GFS_VALUE (cell, r->dv[0][ZB]) +
+river.c:		    (s->ca.y - cm.y)*GFS_VALUE (cell, r->dv[1][ZB]))/h;
+river.c:  (* GTS_OBJECT_CLASS (gfs_river_class ())->parent_class->read) (o, fp);
+river.c:    s->beta = 1.; /* backward Euler */
+river.c:  (* GTS_OBJECT_CLASS (gfs_river_class ())->parent_class->write) (o, fp);
+river.c:  (* GTS_OBJECT_CLASS (gfs_river_class ())->parent_class->destroy) (o);
+river.c:  klass->run = river_run;
+river.c:  klass->cfl = river_cfl;
+river.c:    default_tracer_read = klass->read;
+river.c:    klass->read = river_tracer_read;
+river.c:  layers->nl = atoi (fp->token->str);
+river.c:  if (layers->nl < 1) {
+river.c:  if (layers->nl < 2)
+river.c:  allocate_river (r, 1, layers->nl);
+river.c:      gchar * description = g_strdup_printf ("%s-component of the fluid flux for layer %d",
+river.c:  fprintf (fp, "%s %d", o->klass->info.name, GFS_LAYERS (o)->nl);
+river.c:  klass->read = gfs_layers_read;
+river.c:  klass->write = gfs_layers_write;
+river.c:  if (GTS_OBJECT_CLASS (gfs_bc_subcritical_class ())->parent_class->read)
+river.c:    (* GTS_OBJECT_CLASS (gfs_bc_subcritical_class ())->parent_class->read) (o, fp);
+river.c:  klass->read = bc_subcritical_read;
+river.c:  (* GTS_OBJECT_CLASS (gfs_discharge_elevation_class ())->parent_class->destroy) (o);
+river.c:  (* GTS_OBJECT_CLASS (gfs_discharge_elevation_class ())->parent_class->read) (o, fp);
+river.c:  (* GTS_OBJECT_CLASS (gfs_discharge_elevation_class ())->parent_class->write) (o, fp);
+river.c:  klass->destroy  = discharge_elevation_destroy;
+river.c:  klass->read     = discharge_elevation_read;
+river.c:  klass->write    = discharge_elevation_write;
+river.c:  (* GTS_OBJECT_CLASS (gfs_source_pipe_class ())->parent_class->read) (o, fp);
+river.c:		    (*o)->klass->info.name);
+river.c:  (* GTS_OBJECT_CLASS (gfs_source_pipe_class ())->parent_class->write) (o, fp);
+river.c:  s->mac_value = s->centered_value = source_pipe_value;
+simulation.c:  (* GTS_OBJECT_CLASS (gfs_simulation_class ())->parent_class->destroy) (object);
+simulation.c:  (* GTS_OBJECT_CLASS (gfs_simulation_class ())->parent_class->write)
+simulation.c:    (* GTS_OBJECT (i->data)->klass->write) (i->data, fp);
+simulation.c:  i = sim->refines->items;
+simulation.c:      g_assert (object->klass->write);
+simulation.c:      (* object->klass->write) (object, fp);
+simulation.c:  i = sim->events->items;
+simulation.c:      g_assert (object->klass->write);
+simulation.c:      (* object->klass->write) (object, fp);
+simulation.c:      (* GTS_OBJECT (v->surface_bc)->klass->write) (GTS_OBJECT (v->surface_bc), fp);
+simulation.c:  i = sim->maps->items;
+simulation.c:    g_assert (object->klass->write);
+simulation.c:    (* object->klass->write) (object, fp);
+simulation.c:  (* GTS_OBJECT_CLASS (gfs_simulation_class ())->parent_class->read) (object, fp);
+simulation.c:      g_assert (klass->read);
+simulation.c:      (* klass->read) (&object, fp);
+simulation.c:  sim->refines->items = g_slist_reverse (sim->refines->items);
+simulation.c:  sim->adapts->items = g_slist_reverse (sim->adapts->items);
+simulation.c:  sim->events->items = g_slist_reverse (sim->events->items);
+simulation.c:  sim->solids->items = g_slist_reverse (sim->solids->items);
+simulation.c:  GSList * i = sim->events->items;
+simulation.c:  klass->run = simulation_run;
+simulation.c:  klass->cfl = simulation_cfl;
+simulation.c:  if (s && !f->neighbor && s->s[f->d] > 0. && s->s[f->d] < 1.)
+simulation.c:  GSList * solids = NULL, * i = sim->solids->items;
+simulation.c:  i = sim->refines->items;
+simulation.c:  if (node->klass->write)
+simulation.c:    (* node->klass->write) (node, fp);
+simulation.c:  if (GTS_OBJECT (edge)->klass->write)
+simulation.c:    (* GTS_OBJECT (edge)->klass->write) (GTS_OBJECT (edge), fp);
+simulation.c:      if (GTS_OBJECT (g)->klass->write)
+simulation.c:	(* GTS_OBJECT (g)->klass->write) (GTS_OBJECT (g), fp);
+simulation.c:  i = sim->events->items;
+simulation.c:  GSList * i = sim->maps->items;
+simulation.c:  GSList * reverse = g_slist_reverse (sim->maps->items);
+simulation.c:  sim->maps->items = g_slist_reverse (reverse);
+simulation.c:  GSList * i = sim->maps->items;
+simulation.c:  GSList * reverse = g_slist_reverse (sim->maps->items);
+simulation.c:  sim->maps->items = g_slist_reverse (reverse);
+simulation.c:  GSList * reverse = g_slist_reverse (sim->maps->items);
+simulation.c:  sim->maps->items = g_slist_reverse (reverse);
+simulation.c:  klass->run = advection_run;
+simulation.c:  klass->run = poisson_run;
+simulation.c:  (* GTS_OBJECT_CLASS (gfs_axi_class ())->parent_class->read) (object, fp);
+solid.c:      s->x /= s->n;
+solid.c:      ca.x += (1. - s->x)*cube.p[j].x + s->x*cube.p[k].x;
+solid.c:      ca.y += (1. - s->x)*cube.p[j].y + s->x*cube.p[k].y;
+solid.c:      ca.z += (1. - s->x)*cube.p[j].z + s->x*cube.p[k].z;
+solid.c:      g_assert (inside[j] == 0 || inside[j] == s->inside);
+solid.c:      g_assert (inside[k] == 0 || inside[k] == - s->inside);
+solid.c:      inside[j] = s->inside;
+solid.c:      inside[k] = - s->inside;
+solid.c:      s->n = 0;
+solid.c:      f.s[j].n = s->n;
+solid.c:	f.s[j].x = 1. - s->x;
+solid.c:	f.s[j].inside = - s->inside;
+solid.c:	f.s[j].x = s->x;
+solid.c:	f.s[j].inside = s->inside;
+solid.c:    gdouble n = s->s[2*c] - s->s[2*c + 1];
+solid.c:      (&n->x)[c] = (s->s[2*c + 1] - s->s[2*c]);
+solid.c:    (&ca->x)[cp] += (s->s[2*cp] > s->s[2*cp + 1]) ? (1. - f)/2.*h : (f - 1.)/2.*h;
+solid.c:    m.x = s->s[2*c1 + 1] - s->s[2*c1];
+solid.c:    m.y = s->s[2*c2 + 1] - s->s[2*c2];
+solid.c:	s->s[d] = gfs_line_area (&m, 2.*alpha1);
+solid.c:	ss += s->s[d];
+solid.c:      s->a = a;
+solid.c:      gfs_plane_center (&m, 2.*alpha1, a, &s->cm);
+solid.c:      gfs_plane_area_center (&m, 2.*alpha1, &s->ca);
+solid.c:	(&s->cm.x)[c] = (&p.x)[c] + h*((&s->cm.x)[c] - 0.5);
+solid.c:	(&s->ca.x)[c] = (&p.x)[c] + h*((&s->ca.x)[c] - 0.5);
+solid.c:	  s->s[d] = 0.;
+solid.c:	  s->s[d] = GFS_STATE (n.c[d])->solid->s[FTT_OPPOSITE_DIRECTION (d)];
+solid.c:	  s->s[d] = 1.;
+solid.c:	  s->s[d] = f;
+solid.c:	    s->s[d] = gfs_line_area (&mp, d % 2 ? 2.*alpha1 : 2.*alpha1 - (&m.x)[d/2]);
+solid.c:  (* GTS_OBJECT_CLASS (gfs_solid_class ())->parent_class->read) (o, fp);
+solid.c:    (* GTS_OBJECT_CLASS (gfs_solid_class ())->parent_class->write) (o, fp);
+solid.c:  (* GTS_OBJECT_CLASS (gfs_solid_class ())->parent_class->destroy) (object);
+solid.c:  klass->read = gfs_solid_read;
+solid.c:  klass->write = gfs_solid_write;
+solid.c:  klass->destroy = gfs_solid_destroy;
+source.c:    if (s->mac_value)
+source.c:      sum += (* s->mac_value) (s, cell, v);
+source.c:    if (s->centered_value)
+source.c:      sum += (* s->centered_value) (s, cell, p->v);
+source.c:  (* GTS_OBJECT_CLASS (gfs_source_scalar_class ())->parent_class->write) (o, fp);
+source.c:  if (s->v)
+source.c:    fprintf (fp, " %s", s->v->name);
+source.c:      fprintf (fp, "%s,", s->vector[i]->name);
+source.c:    fprintf (fp, "%s)", s->vector[FTT_DIMENSION - 1]->name);
+source.c:  if (GTS_OBJECT_CLASS (gfs_source_scalar_class ())->parent_class->read)
+source.c:    (* GTS_OBJECT_CLASS (gfs_source_scalar_class ())->parent_class->read) 
+source.c:  if (GTS_OBJECT_CLASS (gfs_source_velocity_class ())->parent_class->read)
+source.c:    (* GTS_OBJECT_CLASS (gfs_source_velocity_class ())->parent_class->read) 
+source.c:  if (s->intensity)
+source.c:    gts_object_destroy (GTS_OBJECT (s->intensity));
+source.c:    if (s->intensity_v[i])
+source.c:      gts_object_destroy (GTS_OBJECT (s->intensity_v[i]));
+source.c:  (* GTS_OBJECT_CLASS (gfs_source_class ())->parent_class->destroy) (o);
+source.c:  if (GTS_OBJECT_CLASS (gfs_source_class ())->parent_class->read)
+source.c:    (* GTS_OBJECT_CLASS (gfs_source_class ())->parent_class->read) 
+source.c:  if (s->v) {    
+source.c:    gfs_function_set_units (GFS_SOURCE (s)->intensity, s->v->units);
+source.c:	s->mac_value = s->centered_value = NULL;
+source.c:	s->face_value = source_face_value;
+source.c:    if (!gfs_read_function_vector (fp, s->vector, GFS_SOURCE (s)->intensity_v, 
+source.c:    if (s->vector[0]->face_source) {
+source.c:      s->mac_value = s->centered_value = NULL;
+source.c:      s->face_value = source_vector_face_value;
+source.c:      s->mac_value = s->centered_value = source_vector_value;
+source.c:  if (GTS_OBJECT_CLASS (gfs_source_class ())->parent_class->write)
+source.c:    (* GTS_OBJECT_CLASS (gfs_source_class ())->parent_class->write) 
+source.c:  if (s->intensity)
+source.c:    gfs_function_write (s->intensity, fp);
+source.c:      gfs_function_write (s->intensity_v[i], fp);
+source.c:    gfs_function_write (s->intensity_v[FTT_DIMENSION - 1], fp);
+source.c:  s->mac_value = s->centered_value = source_value;
+source.c:  (* GTS_OBJECT_CLASS (gfs_source_control_class ())->parent_class->destroy) (o);
+source.c:  (* GTS_OBJECT_CLASS (gfs_source_control_class ())->parent_class->read) (o, fp);
+source.c:  (* GTS_OBJECT_CLASS (gfs_source_control_class ())->parent_class->write) (o, fp);
+source.c:  gdouble vol = gfs_cell_volume (cell, s->v->domain);
+source.c:  s->s += vol*GFS_VALUE (cell, s->v);
+source.c:  s->sv += vol;
+source.c:    s->s = sim->advection_params.dt > 0. && su.sv > 0. ? 
+source.c:      (gfs_function_value (s->intensity, NULL) - su.s/su.sv)/sim->advection_params.dt: 0.;
+source.c:  s->mac_value = s->centered_value = source_control_value;
+source.c:  (* GTS_OBJECT_CLASS (gfs_source_control_field_class ())->parent_class->destroy) (o);
+source.c:  (* GTS_OBJECT_CLASS (gfs_source_control_field_class ())->parent_class->read) (o, fp);
+source.c:    s->mac_value = s->centered_value = NULL;
+source.c:    s->face_value = source_control_field_face_value;
+source.c:  (* GTS_OBJECT_CLASS (gfs_source_control_field_class ())->parent_class->write) (o, fp);
+source.c:  s->mac_value = NULL;
+source.c:  s->centered_value = source_control_field_value;
+source.c:  (* GTS_OBJECT_CLASS (gfs_source_flux_class ())->parent_class->destroy) (o);
+source.c:  (* GTS_OBJECT_CLASS (gfs_source_flux_class ())->parent_class->read) (o, fp);
+source.c:  (* GTS_OBJECT_CLASS (gfs_source_flux_class ())->parent_class->write) (o, fp);
+source.c:  s->s += gfs_cell_volume (cell, GFS_DOMAIN (gfs_object_simulation (s)))*
+source.c:    gfs_function_value (s->fraction, cell);
+source.c:    s->s = 0.;
+source.c:    gfs_restore_fpe_for_function (s->fraction);
+source.c:    s->s = s->s > 0. ? gfs_function_value (s->intensity, NULL)/s->s : 0.;
+source.c:    gfs_restore_fpe_for_function (s->intensity);
+source.c:  s->mac_value = s->centered_value = source_flux_value;
+source.c:  (* GTS_OBJECT_CLASS (gfs_diffusion_class ())->parent_class->destroy) (o);
+source.c:  (* GTS_OBJECT_CLASS (gfs_source_diffusion_class ())->parent_class->destroy) (o);
+source.c:  if (GTS_OBJECT_CLASS (gfs_source_diffusion_class ())->parent_class->read)
+source.c:    (* GTS_OBJECT_CLASS (gfs_source_diffusion_class ())->parent_class->read) 
+source.c:  (* GTS_OBJECT (d->D)->klass->read) ((GtsObject **) &d->D, fp);
+source.c:  (* GTS_OBJECT_CLASS (gfs_source_diffusion_class ())->parent_class->write) (o, fp);
+source.c:  (* GTS_OBJECT (d->D)->klass->write) (GTS_OBJECT (d->D), fp);
+source.c:  if (GTS_OBJECT_CLASS (gfs_source_diffusion_explicit_class ())->parent_class->read)
+source.c:    (* GTS_OBJECT_CLASS (gfs_source_diffusion_explicit_class ())->parent_class->read) 
+source.c:  (* GTS_OBJECT_CLASS (gfs_source_diffusion_explicit_class ())->parent_class->write) (o, fp);
+source.c:  klass->stability = source_diffusion_stability;
+source.c:  s->mac_value = s->centered_value = NULL;
+source.c:  s->flux = source_diffusion_explicit_flux;
+source.c:  (* GTS_OBJECT_CLASS (gfs_source_velocity_class ())->parent_class->read) (o, fp);
+source.c:  (* GTS_OBJECT (d->D)->klass->read) ((GtsObject **) &d->D, fp);
+source.c:  (* GTS_OBJECT_CLASS (gfs_source_velocity_class ())->parent_class->write) (o, fp);
+source.c:  (* GTS_OBJECT (d->D)->klass->write) (GTS_OBJECT (d->D), fp);
+source.c:  s->mac_value = source_viscosity_value;
+source.c:  s->centered_value = source_viscosity_non_diffusion_value;
+source.c:  s->flux = NULL;
+source.c:  klass->stability = source_viscosity_stability;
+source.c:  s->mac_value = NULL;
+source.c:  s->centered_value = NULL;
+source.c:  s->flux = source_viscosity_explicit_flux;
+source.c:  if (s->omegaz)
+source.c:    gts_object_destroy (GTS_OBJECT (s->omegaz));
+source.c:  if (s->drag)
+source.c:    gts_object_destroy (GTS_OBJECT (s->drag));
+source.c:    if (s->u[c])
+source.c:      gts_object_destroy (GTS_OBJECT (s->u[c]));
+source.c:  (* GTS_OBJECT_CLASS (gfs_source_class ())->parent_class->destroy) (o);
+source.c:  (* GTS_OBJECT_CLASS (gfs_source_coriolis_class ())->parent_class->read) (o, fp);
+source.c:  s->omegaz = gfs_function_new (gfs_function_class (), 0.);
+source.c:  gfs_function_read (s->omegaz, gfs_object_simulation (s), fp);
+source.c:    s->drag = gfs_function_new (gfs_function_class (), 0.);
+source.c:    gfs_function_read (s->drag, gfs_object_simulation (s), fp);
+source.c:  if (s->beta < 1.)
+source.c:      s->u[c] = gfs_temporary_variable (domain);
+source.c:      {GTS_DOUBLE, "x", TRUE, &s->d[0]},
+source.c:      {GTS_DOUBLE, "y", TRUE, &s->d[1]},
+source.c:      {GTS_DOUBLE, "z", TRUE, &s->d[2]},
+source.c:    gdouble norm = sqrt (s->d[0]*s->d[0] + s->d[1]*s->d[1] + s->d[2]*s->d[2]);
+source.c:      s->d[0] /= norm;
+source.c:      s->d[1] /= norm;
+source.c:      s->d[2] /= norm;
+source.c:  (* GTS_OBJECT_CLASS (gfs_source_coriolis_class ())->parent_class->write) (o, fp);
+source.c:  gfs_function_write (s->omegaz, fp);
+source.c:  if (s->drag)
+source.c:    gfs_function_write (s->drag, fp);
+source.c:  if (s->d[2] != 1.)
+source.c:    fprintf (fp," { x = %g y = %g z = %g }", s->d[0], s->d[1], s->d[2]);
+source.c:  GFS_VALUE (cell, s->u[0]) =   
+source.c:    (1. - s->beta)*(f[1]*GFS_VALUE (cell, sv->v[1]) - f[0]*GFS_VALUE (cell, sv->v[0]));
+source.c:  GFS_VALUE (cell, s->u[1]) = 
+source.c:    (1. - s->beta)*(- f[0]*GFS_VALUE (cell, sv->v[1]) - f[1]*GFS_VALUE (cell, sv->v[0]));
+source.c:  gdouble f = gfs_function_value (s->omegaz, cell)*(1. - s->beta);
+source.c:  gdouble e = s->drag ? gfs_function_value (s->drag, cell)*(1. - s->beta) : 0.;
+source.c:  GFS_VALUE (cell, s->u[0]) = - e*GFS_VALUE (cell, sv->v[0]) +
+source.c:    f*(GFS_VALUE (cell, sv->v[1])*s->d[2] - GFS_VALUE (cell, sv->v[2])*s->d[1]);
+source.c:  GFS_VALUE (cell, s->u[1]) = - e*GFS_VALUE (cell, sv->v[1]) +
+source.c:    f*(GFS_VALUE (cell, sv->v[2])*s->d[0] - GFS_VALUE (cell, sv->v[0])*s->d[2]);
+source.c:  GFS_VALUE (cell, s->u[2]) = - e*GFS_VALUE (cell, sv->v[2]) +
+source.c:    f*(GFS_VALUE (cell, sv->v[0])*s->d[1] - GFS_VALUE (cell, sv->v[1])*s->d[0]);
+source.c:  s->mac_value = gfs_source_coriolis_mac_value;
+source.c:  s->centered_value = gfs_source_coriolis_centered_value;
+source.c:  gdouble dt = sim->advection_params.dt*s->beta;
+source.c:  gdouble c = sim->advection_params.dt*gfs_function_value (s->omegaz, cell)*s->beta;
+source.c:  gdouble e = s->drag ? sim->advection_params.dt*gfs_function_value (s->drag, cell)*s->beta : 0.;
+source.c:  GtsMatrix * m = gts_matrix_new (    1. + e, -c*s->d[2],   c*s->d[1],  0.,
+source.c:				   c*s->d[2],     1. + e,  -c*s->d[0],  0.,
+source.c:				  -c*s->d[1],  c*s->d[0],      1. + e,  0.,
+source.c:			      (FttCellTraverseFunc) (s->d[2] != 1. ? 
+source.c:      gchar * c = g_strconcat ("\n", gfs_function_description (s->omegaz, FALSE), NULL);
+source.c:      if (s->drag)
+source.c:	c = g_strconcat (c, "\n", gfs_function_description (s->drag, FALSE), NULL);
+surface.c:  (* GTS_OBJECT (s)->klass->read) (&o, fp);
+surface.c:  (* GTS_OBJECT (s)->klass->write) (GTS_OBJECT (s), fp);
+surface.c:      gboolean binary = GTS_POINT_CLASS (s->vertex_class)->binary;
+surface.c:      GTS_POINT_CLASS (s->vertex_class)->binary = TRUE;
+surface.c:      GTS_POINT_CLASS (s->vertex_class)->binary = binary;
+surface.c:  if (s->s)
+surface.c:    gts_object_destroy (GTS_OBJECT (s->s));
+surface.c:  if (s->f)
+surface.c:    gts_object_destroy (GTS_OBJECT (s->f));
+surface.c:  if (s->m)
+surface.c:    gts_matrix_destroy (s->m);
+surface.c:  if (s->bbtree)
+surface.c:    gts_bb_tree_destroy (s->bbtree, TRUE);
+surface.c:  (* GTS_OBJECT_CLASS (gfs_surface_class ())->parent_class->destroy) (object);
+surface.c:  if (s->f) {
+surface.c:  else if (s->s) {
+surface.c:    gts_surface_foreach_face (s->s, (GtsFunc) face_overlaps_box, data);
+surface.c:    s2->bbtree = s->bbtree;
+surface.c:  if (s->f || s->bbtree) {
+surface.c:    gts_surface_foreach_face (s->s, (GtsFunc) triangle_face_intersection, I);
+surface.c:  if (s->f) {
+surface.c:    gts_surface_foreach_face (s->s, (GtsFunc) surface_normal, n);
+surface.c:  if (s->f || s->bbtree) {
+surface.c:    gts_surface_foreach_face (s->s, (GtsFunc) add_tetrahedron_volume, data);
+surface.c:  klass->read = surface_read;
+surface.c:  klass->write = surface_write;
+surface.c:  klass->destroy = surface_destroy;
+surface.c:  s->scale[0] = 1.; s->scale[1] = 1.; s->scale[2] = 1.;
+surface.c:  s->flip = FALSE;
+surface.c:  s->vertex_class = gts_vertex_class ();
+surface.c:  s->edge_class = gts_edge_class ();
+surface.c:  s->face_class = gts_face_class ();
+surface.c:  g_return_val_if_fail (s->f != NULL || s->bbtree != NULL, 0.);
+surface.c:  if (s->f) { /* spatial function */
+surface.c:    if (s->m)
+surface.c:      gts_point_transform (&p, s->m);
+surface.c:    return (s->flip ? -1. : 1.)*gfs_function_spatial_value (s->f, (FttVector *)&p.x) + 1e-20;
+surface.c:    gdouble d2 = gts_bb_tree_point_distance (s->bbtree, &p, 
+surface.c:    return gts_point_is_inside_surface (&p, s->bbtree, TRUE) ? d2 : - d2;
+tension.c:  (* GTS_OBJECT_CLASS (gfs_source_tension_generic_class ())->parent_class->destroy) (o);
+tension.c:  (* GTS_OBJECT_CLASS (gfs_source_tension_generic_class ())->parent_class->read) (o, fp);
+tension.c:  if ((s->c = gfs_variable_from_name (domain->variables, fp->token->str)) == NULL) {
+tension.c:  gfs_function_read (s->sigma, domain, fp);
+tension.c:  gfs_function_set_units (s->sigma, 3.);
+tension.c:  (* GTS_OBJECT_CLASS (gfs_source_tension_generic_class ())->parent_class->write) (o, fp);
+tension.c:  klass->stability =                  gfs_source_tension_generic_stability;
+tension.c:  (* GTS_OBJECT_CLASS (gfs_source_tension_css_class ())->parent_class->read) (o, fp);
+tension.c:    if ((s->t[c] = gfs_variable_from_name (domain->variables, name[c])) == NULL)
+tension.c:      s->t[c] = gfs_domain_add_variable (domain, name[c], NULL);
+tension.c:  GFS_VALUE (cell, s->g[0]) = sigh*n.x*n.x/nn;
+tension.c:  GFS_VALUE (cell, s->g[1]) = sigh*n.y*n.y/nn;
+tension.c:  GFS_VALUE (cell, s->g[2]) = sigh*n.x*n.y/nn;
+tension.c:  gfs_youngs_gradient (cell, s->g[0], &nx);
+tension.c:  gfs_youngs_gradient (cell, s->g[1], &ny);
+tension.c:  gfs_youngs_gradient (cell, s->g[2], &nxy);
+tension.c:  GFS_VALUE (cell, s->t[0]) = alpha*(ny.x - nxy.y)/h;
+tension.c:  GFS_VALUE (cell, s->t[1]) = alpha*(nx.y - nxy.x)/h;
+tension.c:      s->g[i] = gfs_temporary_variable (GFS_DOMAIN (sim));
+tension.c:      gts_object_destroy (GTS_OBJECT (s->g[i]));
+tension.c:  s->centered_value = gfs_source_tension_css_value;
+tension.c:  (* GTS_OBJECT_CLASS (gfs_source_tension_class ())->parent_class->read) (o, fp);
+tension.c:  if ((s->k = gfs_variable_from_name (domain->variables, fp->token->str)) == NULL) {
+tension.c:  if (GFS_IS_VARIABLE_POSITION (s->k))
+tension.c:  (* GTS_OBJECT_CLASS (gfs_source_tension_class ())->parent_class->write) (o, fp);
+tension.c:  klass->stability =                     gfs_source_tension_stability;
+tension.c:  (* GTS_OBJECT_CLASS (gfs_variable_curvature_class ())->parent_class->destroy) (o);
+tension.c:  (* GTS_OBJECT_CLASS (gfs_variable_curvature_class ())->parent_class->read) (o, fp);
+tension.c:  (* GTS_OBJECT_CLASS (gfs_variable_curvature_class ())->parent_class->write) (o, fp);
+tension.c:  klass->destroy = variable_curvature_destroy;
+tension.c:  klass->read = variable_curvature_read;
+tension.c:  klass->write = variable_curvature_write;
+tension.c:  (* GTS_OBJECT_CLASS (gfs_variable_position_class ())->parent_class->read) (o, fp);
+tension.c:  (* GTS_OBJECT_CLASS (gfs_variable_position_class ())->parent_class->write) (o, fp);
+tension.c:  klass->read = variable_position_read;
+tension.c:  klass->write = variable_position_write;
+timestep.c:      if (s->s[2*c] + s->s[2*c + 1] > 0.)
+timestep.c:	GFS_VALUE (cell, g[c]) /= s->s[2*c] + s->s[2*c + 1];
+timestep.c:  dp = (* f->s->face_value) (f->s, face, f->v);
+timestep.c:	if (s->face_value) {
+timestep.c:    if (s->centered_value)
+timestep.c:      sum += (* s->centered_value) (s, cell, p->v);
+timestep.c:  (* GTS_OBJECT_CLASS (gfs_surface_generic_bc_class ())->parent_class->destroy) (o);
+timestep.c:  if (GTS_OBJECT_CLASS (gfs_surface_generic_bc_class ())->parent_class->read)
+timestep.c:    (* GTS_OBJECT_CLASS (gfs_surface_generic_bc_class ())->parent_class->read) 
+timestep.c:  if (GTS_OBJECT_CLASS (gfs_surface_generic_bc_class ())->parent_class->write)
+timestep.c:    (* GTS_OBJECT_CLASS (gfs_surface_generic_bc_class ())->parent_class->write) (o, fp);
+timestep.c:  fprintf (fp, "%s %s", o->klass->info.name, GFS_SURFACE_GENERIC_BC (o)->v->name);
+timestep.c:  (* GTS_OBJECT_CLASS (gfs_surface_bc_class ())->parent_class->destroy) (object);
+timestep.c:  if (GTS_OBJECT_CLASS (gfs_surface_bc_class ())->parent_class->read)
+timestep.c:    (* GTS_OBJECT_CLASS (gfs_surface_bc_class ())->parent_class->read) (o, fp);
+timestep.c:  if (GTS_OBJECT_CLASS (gfs_surface_bc_class ())->parent_class->write)
+timestep.c:    (* GTS_OBJECT_CLASS (gfs_surface_bc_class ())->parent_class->write) (o, fp);
+timestep.c:  klass->bc = gfs_surface_bc_bc;
+unstructured.c:    gfs_cut_cube_vertices (cell, -1, &s->ca, &normal, nodecutface, d, NULL, NULL);
+unstructured.c:    FttVector facecenter = {s->ca.x, s->ca.y, s->ca.z};
+utils.c:  (* object->klass->write) (object, fp);
+utils.c:  (* object->klass->read) (&clone, gfp);
+utils.c: * Reads the next brackets-delimited ({...}) statemement in @fp,
+utils.c:  gchar * ret = s->str;
+utils.c:  (* gfs_global_class ()->parent_class->destroy) (object);
+utils.c:  fprintf (fp, "%s {", object->klass->info.name);
+utils.c:  klass->destroy = global_destroy;
+utils.c:  klass->read =    global_read;
+utils.c:  klass->write =   global_write;
+utils.c:  gchar * key = s->str;
+utils.c:    fputs (pending_functions->str, fin);
+utils.c:  if (GTS_OBJECT_CLASS (gfs_function_class ())->parent_class->read)
+utils.c:    (* GTS_OBJECT_CLASS (gfs_function_class ())->parent_class->read) (o, fp);
+utils.c:  if (GTS_OBJECT_CLASS (gfs_function_class ())->parent_class->write)
+utils.c:    (* GTS_OBJECT_CLASS (gfs_function_class ())->parent_class->write) (o, fp);
+utils.c:  (* GTS_OBJECT_CLASS (gfs_function_class ())->parent_class->destroy) 
+utils.c:  (* GTS_OBJECT (f)->klass->read) (&o, fp);
+utils.c:  (* GTS_OBJECT (f)->klass->write) (GTS_OBJECT (f), fp);
+utils.c:      component[n++] = s->str;
+utils.c:  component[n++] = s->str;
+variable.c:  if (GTS_OBJECT_CLASS (gfs_variable_class ())->parent_class->read)
+variable.c:    (* GTS_OBJECT_CLASS (gfs_variable_class ())->parent_class->read) (o, fp);
+variable.c:  if (GTS_OBJECT_CLASS (gfs_variable_class ())->parent_class->write)
+variable.c:    (* GTS_OBJECT_CLASS (gfs_variable_class ())->parent_class->write) (o, fp);
+variable.c:  (* GTS_OBJECT_CLASS (gfs_variable_class ())->parent_class->destroy) (object);
+variable.c:  klass->read = gfs_variable_read;
+variable.c:  klass->write = gfs_variable_write;
+variable.c:  klass->destroy = gfs_variable_destroy;
+variable.c:  (* o->klass->write) (o, f);
+variable.c:  (* o->klass->read) (&clone, fp);
+variable.c:  (* GTS_OBJECT_CLASS (gfs_variable_tracer_class ())->parent_class->read) (o, fp);
+variable.c:  (* GTS_OBJECT_CLASS (gfs_variable_tracer_class ())->parent_class->write) (o, fp);
+variable.c:  klass->read = variable_tracer_read;
+variable.c:  klass->write = variable_tracer_write;
+variable.c:  gdouble dt = GFS_SIMULATION (res->domain)->advection_params.dt;
+variable.c:  klass->event = variable_residual_event;
+variable.c:  (* GTS_OBJECT_CLASS (gfs_variable_filtered_class ())->parent_class->read) (o, fp);
+variable.c:  (* GTS_OBJECT_CLASS (gfs_variable_filtered_class ())->parent_class->write) (o, fp);
+variable.c:  klass->read = variable_filtered_read;
+variable.c:  klass->write = variable_filtered_write;
+variable.c:  (* GTS_OBJECT_CLASS (gfs_variable_function_class ())->parent_class->destroy) (o);
+variable.c:  (* GTS_OBJECT_CLASS (gfs_variable_function_class ())->parent_class->read) (o, fp);
+variable.c:  (* GTS_OBJECT_CLASS (gfs_variable_function_class ())->parent_class->write) (o, fp);
+variable.c:  klass->destroy = variable_function_destroy;
+variable.c:  klass->read = variable_function_read;
+variable.c:  klass->write = variable_function_write;
+variable.c:  (* GTS_OBJECT_CLASS (gfs_variable_function_class ())->parent_class->read) (o, fp);
+variable.c:  klass->event = variable_stream_function_event;
+variable.c:  (* GTS_OBJECT_CLASS (gfs_variable_poisson_class ())->parent_class->read) (o, fp);
+variable.c:  (* GTS_OBJECT_CLASS (gfs_variable_poisson_class ())->parent_class->write) (o, fp);
+variable.c:  klass->read = variable_poisson_read;
+variable.c:  klass->write = variable_poisson_write;
+variable.c:  (* GTS_OBJECT_CLASS (gfs_variable_average_class ())->parent_class->read) (o, fp);
+variable.c:  (* GTS_OBJECT_CLASS (gfs_variable_average_class ())->parent_class->write) (o, fp);
+variable.c:  klass->read = variable_average_read;
+variable.c:  klass->write = variable_average_write;
+variable.c:	if (s->face_value)
+variable.c:  (* GTS_OBJECT_CLASS (gfs_hydrostatic_pressure_class ())->parent_class->read) (o, fp);
+variable.c:  klass->read = hydrostatic_pressure_read;
+variable.c:  (* GTS_OBJECT_CLASS (gfs_constant_class ())->parent_class->destroy) (object);
+variable.c:  (* GTS_OBJECT_CLASS (gfs_constant_class ())->parent_class->read) (o, fp);
+variable.c:  (* GTS_OBJECT_CLASS (gfs_constant_class ())->parent_class->write) (o, fp);  
+variable.c:  klass->destroy = gfs_constant_destroy;
+variable.c:  klass->read =    gfs_constant_read;
+variable.c:  klass->write =   gfs_constant_write;
+variable.c:  (* GTS_OBJECT_CLASS (gfs_spatial_sum_class ())->parent_class->destroy) (o);
+variable.c:  (* GTS_OBJECT_CLASS (gfs_spatial_sum_class ())->parent_class->write) (o, fp);
+variable.c:  (* GTS_OBJECT_CLASS (gfs_spatial_sum_class ())->parent_class->read) (o, fp);
+variable.c:    gfs_function_value (s->v, cell);
+variable.c:  klass->read = gfs_spatial_sum_read;
+variable.c:  klass->write = gfs_spatial_sum_write;
+variable.c:  klass->destroy = gfs_spatial_sum_destroy;
+variable.c:  (* GTS_OBJECT_CLASS (gfs_derived_variable_class ())->parent_class->destroy) (object);
+variable.c:  klass->destroy = gfs_derived_variable_destroy;
+vof.c: * Fills @g with the Youngs-averaged gradients of @v 
+vof.c:      g_strdup_printf ("%s-component of the normal to the interface defined by %s",
+vof.c:  GSList * j = t->concentrations->items;
+vof.c:  (* GTS_OBJECT_CLASS (gfs_variable_tracer_vof_class ())->parent_class->destroy) (o);
+vof.c:  (* GTS_OBJECT_CLASS (gfs_variable_tracer_vof_class ())->parent_class->read) (o, fp);
+vof.c:  klass->destroy = variable_tracer_vof_destroy;
+vof.c:  klass->read = variable_tracer_vof_read;
+vof.c:    GSList * j = t->concentrations->items;
+vof.c:    /* firs-order interpolation for concentrations in interfacial cells */
+vof.c:    GSList * j = t->concentrations->items;
+vof.c:  GSList * j = t->concentrations->items;
+vof.c:  gdouble unorm = p->par->dt*(s->f[2*p->c].un + s->f[2*p->c + 1].un)/(2.*size);
+vof.c:  s->f[2*p->c].v     = v + MIN ((  1. - unorm)/2.,  0.5)*g;
+vof.c:  s->f[2*p->c + 1].v = v + MAX ((- 1. - unorm)/2., -0.5)*g;
+vof.c:  GSList * concentrations = GFS_VARIABLE_TRACER_VOF (p.vof)->concentrations->items, * j;
+vof.c:  (* GTS_OBJECT_CLASS (gfs_variable_vof_concentration_class ())->parent_class->read) (o, fp);
+vof.c:  (* GTS_OBJECT_CLASS (gfs_variable_vof_concentration_class ())->parent_class->write) (o, fp);
+vof.c:  klass->read = variable_vof_concentration_read;
+vof.c:  klass->write = variable_vof_concentration_write;
+vof.c:  GSList * j = GFS_VARIABLE_TRACER_VOF (v)->concentrations->items;
+vof.c:  (* GTS_OBJECT_CLASS (gfs_variable_tracer_vof_height_class ())->parent_class->destroy) (o);
+vof.c:  (* GTS_OBJECT_CLASS (gfs_variable_tracer_vof_height_class ())->parent_class->read) (o, fp);
+vof.c:    gchar * description = g_strdup_printf ("%s-component (bottom) of the height function for the interface defined by %s",
+vof.c:    description = g_strdup_printf ("%s-component (top) of the height function for the interface defined by %s",
+vof.c:  klass->destroy = variable_tracer_vof_height_destroy;
+vof.c:  klass->read = variable_tracer_vof_height_read;
+wave.c:  (* GTS_OBJECT_CLASS (gfs_wave_class ())->parent_class->destroy) (object);
+wave.c:  (* GTS_OBJECT_CLASS (gfs_wave_class ())->parent_class->read) (o, fp);
+wave.c:  (* GTS_OBJECT_CLASS (gfs_wave_class ())->parent_class->write) (o, fp);
+wave.c:  klass->run = wave_run;
+wave.c:  (* GTS_OBJECT_CLASS (gfs_init_wave_class ())->parent_class->read) (o, fp);
+wave.c:  (* GTS_OBJECT_CLASS (gfs_init_wave_class ())->parent_class->write) (o, fp);
+wave.c:  (* GTS_OBJECT_CLASS (gfs_init_wave_class ())->parent_class->destroy) (object);

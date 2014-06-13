@@ -133,7 +133,7 @@ static double dsd (const gchar * name, FttComponent c)
   if ((_cell->flags & GFS_FLAG_DIRICHLET) == 0)
     return NODATA;
   FttVector g;
-  gfs_cell_dirichlet_gradient (_cell, v->i, -1, GFS_STATE (_cell)->solid->fv, &g);
+  gfs_cell_dirichlet_gradient (_cell, v->i, -1, GFS_STATE (_cell)->solid->fv, &g,NULL);
   return gfs_dimensional_value (v, (&g.x)[c]/(_sim->physical_params.L*ftt_cell_size (_cell)));
 }
 
@@ -167,7 +167,7 @@ static double flux (const gchar * name)
     FttComponent c;
     for (c = 0; c < FTT_DIMENSION; c++)
       (&s->v.x)[c] = (&m.x)[c]*(s->s[2*c + 1] - s->s[2*c]);
-    flux = gfs_cell_dirichlet_gradient_flux (_cell, v->i, -1, GFS_STATE (_cell)->solid->fv);
+    flux = gfs_cell_dirichlet_gradient_flux (_cell, v->i, -1, GFS_STATE (_cell)->solid->fv,NULL);
   }
   return gfs_dimensional_value (v, flux*pow (_sim->physical_params.L*ftt_cell_size (_cell), 
 					     FTT_DIMENSION - 2.));

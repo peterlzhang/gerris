@@ -174,14 +174,16 @@ void                  gfs_cell_dirichlet_gradient    (FttCell * cell,
 						      guint v,
 						      gint max_level,
 						      gdouble v0,
-						      FttVector * grad);
+						      FttVector * grad,
+                  GfsVariable * vofv);
 void                  gfs_mixed_cell_gradient        (FttCell * cell,
 						      GfsVariable * v,
 						      FttVector * g);
 gdouble               gfs_cell_dirichlet_gradient_flux (FttCell * cell,
 							guint v,
 							gint max_level,
-							gdouble v0);
+							gdouble v0,
+              GfsVariable * vofv);
 gdouble               gfs_cell_dirichlet_value         (FttCell * cell,
 							GfsVariable * v,
 							gint max_level);

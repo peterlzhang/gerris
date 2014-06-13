@@ -123,7 +123,7 @@ fluid.lo: fluid.c /usr/include/math.h /usr/include/features.h \
  advection.h domain.h boundary.h utils.h /usr/include/glib-2.0/gmodule.h \
  ../config.h /usr/local/include/mpi.h /usr/local/include/mpio.h \
  /usr/local/include/mpi.h surface.h poisson.h event.h simulation.h \
- solid.h
+ solid.h vof.h
 
 /usr/include/math.h:
 
@@ -458,3 +458,5 @@ event.h:
 simulation.h:
 
 solid.h:
+
+vof.h:

@@ -28,6 +28,7 @@
 #include "variable.h"
 #include "domain.h"
 #include "solid.h"
+#include "vof.h"
 
 /**
  * gfs_cell_face:
@@ -1508,7 +1509,8 @@ void gfs_cell_dirichlet_gradient (FttCell * cell,
 				  guint v,
 				  gint max_level,
 				  gdouble v0,
-				  FttVector * grad)
+				  FttVector * grad,
+          GfsVariable * vofv)
 {
   g_return_if_fail (cell != NULL);
   g_return_if_fail (grad != NULL);
@@ -1524,27 +1526,101 @@ void gfs_cell_dirichlet_gradient (FttCell * cell,
     gdouble mmod[N_CELLS - 1][N_CELLS - 1];
     FttVector solidnorm;
     gdouble norm_mag;
-    gdouble Ls = 0.01;
-    gdouble  temp;
-    FttVector pos;
+    gdouble Ls = 0.1, Ls0 = 0.1;
+    gdouble temp, tau, tauavg, xtcp, xc, vtangent, tauc = 10000;
+    FttVector pos, q, interfacenorm, p1, p2, s1, s2, tcp, du;
+    gdouble h = ftt_cell_size(cell);
+
+    
 
     grad->x = grad->y = grad->z = 0.;
     if (!cell_bilinear (cell, n, &GFS_STATE (cell)->solid->ca, 
 			gfs_cell_cm, max_level, m))
       return;
 
-    gfs_solid_normal(n[0],&solidnorm);
-//    printf("solid normal = (%f,%f,%f)\n",solidnorm.x,solidnorm.y,solidnorm.z);
-    norm_mag = pow((pow(solidnorm.x,2)+pow(solidnorm.y,2)+pow(solidnorm.z,2)),0.5);
-    solidnorm.x = -solidnorm.x/norm_mag;
+    // Determine unit vector normal to solid interface pointing towards fluid direction
+    gfs_solid_normal(n[0],&solidnorm); // fill solidnorm with solid normal pointing towards solid
+    norm_mag = pow((pow(solidnorm.x,2)+pow(solidnorm.y,2)+pow(solidnorm.z,2)),0.5); // determine normal magnitude
+    solidnorm.x = -solidnorm.x/norm_mag; // make solidnorm unit vector pointing towards fluid
     solidnorm.y = -solidnorm.y/norm_mag;
     solidnorm.z = -solidnorm.z/norm_mag;
-//    printf("normalized solid normal = (%f,%f,%f)\n",solidnorm.x,solidnorm.y,solidnorm.z);    
 
 
 /* Modify matrix m to include slip at the interface */
     if ( v == 2 || v == 3) {
-      inverse(m);
+      if(GFS_IS_VARIABLE_TRACER_VOF(vofv) && GFS_VALUE(cell,vofv) < 1. && GFS_VALUE(cell,vofv) > 0.) {
+        ftt_cell_pos(cell,&pos);
+//        printf("vofv(%f,%f) =  %f\n",pos.x,pos.y,GFS_VALUE(cell,vofv));
+        GfsVariableTracerVOF * t = GFS_VARIABLE_TRACER_VOF(vofv);
+        FttVector q[FTT_DIMENSION*(FTT_DIMENSION - 1) + 1];
+        guint ndim = gfs_vof_facet (cell, t, q, &interfacenorm);
+        for (i = 0; i < ndim-1; i++ ) {
+          p1.x = q[i].x; p1.y = q[i].y; p1.z = q[i].z;
+          p2.x = q[i + 1].x; p2.y = q[i + 1].y; p2.z = q[i + 1].z;
+        }
+//        printf("p1 = (%f,%f,%f)\n",p1.x,p1.y,p1.z);
+//        printf("p2 = (%f,%f,%f)\n",p2.x,p2.y,p2.z);
+        GfsSolidVector * s = GFS_STATE (cell)->solid;
+//        printf("ca = (%f,%f)\n",s->ca.x,s->ca.y);
+        s1.x = s->ca.x+(-solidnorm.y*h); 
+        s1.y = s->ca.y+(solidnorm.x*h);
+        s2.x = s->ca.x+(solidnorm.y*h);
+        s2.y = s->ca.y+(-solidnorm.x*h); 
+       
+//        printf("s1 = (%f,%f)\n",s1.x,s1.y);
+//        printf("s2 = (%f,%f)\n",s2.x,s2.y); 
+        
+        // Compute triple contact point. This is the solution for infinitely long lines and
+        // does not consider whether or not the intersection is within the cell
+        tcp.x = ((s1.x*s2.y-s1.y*s2.x)*(p1.x-p2.x)-(s1.x-s2.x)*(p1.x*p2.y-p1.y*p2.x))/
+                ((s1.x-s2.x)*(p1.y-p2.y)-(s1.y-s2.y)*(p1.x-p2.x));
+        tcp.y = ((s1.x*s2.y-s1.y*s2.x)*(p1.y-p2.y)-(s1.y-s2.y)*(p1.x*p2.y-p1.y*p2.x))/
+                ((s1.x-s2.x)*(p1.y-p2.y)-(s1.y-s2.y)*(p1.x-p2.x));
+//        printf("tcp = (%f,%f)\n",tcp.x,tcp.y);
+        // Test to see if intersection is outside of cell. 
+        // Note, this does not consider the case that the lines may not intersect. In almost parallel
+        // lines the denominator approaches zero.
+        if (tcp.x > pos.x+h/2. || tcp.x < pos.x-h/2. || tcp.y > pos.y+h/2. || tcp.y < pos.y-h/2.) {
+//          printf("Error: predicted triple contact point outside of cell\n");
+        }
+        else {
+          // Compute du/dx and du/dy at ca assuming ***NO SLIP*** at the solid boundary
+          for (i = 0; i < N_CELLS - 1; i++) {// in 2D, i = 0,1,2
+            for (c = 0; c < FTT_DIMENSION; c++) { // in 2D c = 0,1
+              (&grad->x)[c] += m[c][i]*(GFS_VALUEI (n[i + 1], v) - v0);
+            }
+          }
+//        printf("for no slip: du/dx = %f, du/dy = %f\n",grad->x,grad->y);
+          du.x = -solidnorm.y*grad->x+solidnorm.x*grad->y; // du/dt tangential derivative
+          du.y = solidnorm.x*grad->x+solidnorm.y*grad->y; // du/dn normal derivative
+//        printf("du/dt = %f, du/dn = %f\n",du.x, du.y);
+          tau = fabs(du.x)+fabs(du.y);
+
+          xtcp = pow(pow(s->ca.x-tcp.x,2)+pow(s->ca.y-tcp.y,2),0.5);
+//        printf("distance from ca to tcp = %f\n",xtcp);
+        
+/*        gdouble theta = acos(solidnorm.x*0.+solidnorm.y*1.); // find angle between y unit vector and solid normal
+        printf("theta = %f\n",theta);
+        if (v == 2) {// u velocity
+          vtangent = v0*cos(theta);
+        }
+        else if ( v == 3 ) {
+          vtangent = v0*sin(theta);
+        }
+*/
+          xc = 1.*4./M_PI/tauc;
+          tauavg = tauc*(tau/tauc+xc/xtcp*(1-log(xc/xtcp)));
+//        printf("tauavg = %f\n",tauavg);
+          Ls = Ls0/pow(fabs(1-tauavg/tauc),0.5); // compute new slip lenght
+//          printf("modified Ls = %f\n",Ls); 
+        }
+      }
+      else {
+//        printf("cell does not contain interface and solid\n");
+      }
+      
+      
+        inverse(m);
     ////////////////////////////////////////////////////////////
       // Navier slip linear interpolation at the solid surface
 /*      for (i = 0; i < N_CELLS - 1; i++) {
@@ -1556,43 +1632,31 @@ void gfs_cell_dirichlet_gradient (FttCell * cell,
 */
     ////////////////////////////////////////////////////////////
       // JBC slip linear interpolation at the solid surface
-      //GfsVariable * tempvar = gfs_variable_from_name(
-      // GfsVariableTracerVOF * t = GFS_VARIABLE_TRACER_VOF_HEIGHT (v);
-//      printf("JBC\n");
-      temp = GFS_VALUEI(cell,4);
-      if (temp < 1. && temp > 0.) {
-        ftt_cell_pos(cell,&pos); 
-        printf("T(%f,%f) = %f\n",pos.x,pos.y,temp);
-      }
-      for (i = 0; i < N_CELLS - 1; i++) {
-        mmod[i][0] = m[i][0]+Ls*solidnorm.x-Ls*solidnorm.y;
-        mmod[i][1] = m[i][1]+Ls*solidnorm.y+Ls*solidnorm.x;
-        mmod[i][2] = m[i][2] + Ls*m[i][1]*solidnorm.x + Ls*m[i][0]*solidnorm.y-Ls*m[i][1]*solidnorm.y+Ls*m[i][0]*solidnorm.x;
-      }
+        for (i = 0; i < N_CELLS - 1; i++) {
+          mmod[i][0] = m[i][0]+Ls*solidnorm.x-Ls*solidnorm.y;
+          mmod[i][1] = m[i][1]+Ls*solidnorm.y+Ls*solidnorm.x;
+          mmod[i][2] = m[i][2] + Ls*m[i][1]*solidnorm.x + Ls*m[i][0]*solidnorm.y
+                      -Ls*m[i][1]*solidnorm.y+Ls*m[i][0]*solidnorm.x;
+        }
     ////////////////////////////////////////////////////////////
 
-      inverse(mmod);
+        inverse(mmod);
+      // set m equal to mmod 
+        for (i = 0; i < N_CELLS - 1; i++) {
+          m[i][0] = mmod[i][0];
+          m[i][1] = mmod[i][1];
+          m[i][2] = mmod[i][2];
+        }
       
-      for (i = 0; i < N_CELLS - 1; i++) {
-        m[i][0] = mmod[i][0];
-        m[i][1] = mmod[i][1];
-        m[i][2] = mmod[i][2];
-      }
     }
 
 
-/* Dirichlet condition at the wall */
+    /* Dirichlet condition at the wall */
     for (i = 0; i < N_CELLS - 1; i++) {// in 2D, i = 0,1,2
       for (c = 0; c < FTT_DIMENSION; c++) { // in 2D c = 0,1
-//        printf("m[c][i] = m[%d][%d] = %f\n",c,i,m[c][i]);
-//        printf("v = %d, v0 = %f\n",v,v0);
-//        printf("(GFS_VALUEI (n[i + 1], v) = %f\n",GFS_VALUEI (n[i + 1], v));
-//        printf("(&grad->x)[%d] = %f += %f*(%f-%f)\n",c,(&grad->x)[c],m[c][i],GFS_VALUEI (n[i + 1], v),v0); 
         (&grad->x)[c] += m[c][i]*(GFS_VALUEI (n[i + 1], v) - v0);
-//        printf("(&grad->x)[%d] = %f\n",c,(&grad->x)[c]);
       }
     }
-
   }
 }
 
@@ -1724,7 +1788,8 @@ gdouble gfs_mixed_cell_interpolate (FttCell * cell,
 gdouble gfs_cell_dirichlet_gradient_flux (FttCell * cell,
 					  guint v,
 					  gint max_level,
-					  gdouble v0)
+					  gdouble v0,
+            GfsVariable * vofv)
 {
   g_return_val_if_fail (cell != NULL, 0.);
 //  printf("SOLID3 called for v = %d\n",v);
@@ -1734,7 +1799,7 @@ gdouble gfs_cell_dirichlet_gradient_flux (FttCell * cell,
     GfsSolidVector * s = GFS_STATE (cell)->solid;
     FttVector g;    
 //    printf("Initial g = (%f,%f,%f)\n",g.x,g.y,g.z);
-    gfs_cell_dirichlet_gradient (cell, v, max_level, v0, &g);
+    gfs_cell_dirichlet_gradient (cell, v, max_level, v0, &g, vofv);
 //    printf("After cell_dirichlet_gradient g = (%f,%f,%f)\n",g.x,g.y,g.z);
     return g.x*s->v.x + g.y*s->v.y + g.z*s->v.z;
   }

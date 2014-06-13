@@ -3471,7 +3471,7 @@ static void add_viscous_force (FttCell * cell, Force * f)
     FttComponent c;
     
     g_assert (((cell)->flags & GFS_FLAG_DIRICHLET) != 0);
-    gfs_cell_dirichlet_gradient (cell, f->v->i, -1, s->fv, &g);
+    gfs_cell_dirichlet_gradient (cell, f->v->i, -1, s->fv, &g, NULL);
     
     D = - gfs_source_diffusion_cell (f->d, cell);
     n.x = s->s[1] - s->s[0];

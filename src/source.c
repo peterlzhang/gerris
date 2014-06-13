@@ -1218,7 +1218,7 @@ static void add_diffusion_explicit_flux (FttCell * cell, FluxPar * p)
   if (GFS_IS_MIXED (cell)) {
     GfsSolidVector * solid = GFS_STATE (cell)->solid;
     if (((cell)->flags & GFS_FLAG_DIRICHLET) != 0)
-      f = gfs_cell_dirichlet_gradient_flux (cell, p->v->i, -1, solid->fv);
+      f = gfs_cell_dirichlet_gradient_flux (cell, p->v->i, -1, solid->fv,NULL);
     else
       f = solid->fv*solid->v.x;
   }
@@ -1520,7 +1520,7 @@ static void add_viscosity_explicit_flux (FttCell * cell, FluxPar * p)
 
   if (GFS_IS_MIXED (cell)) {
     if (((cell)->flags & GFS_FLAG_DIRICHLET) != 0)
-      g.b = gfs_cell_dirichlet_gradient_flux (cell, p->v->i, -1., 0.);
+      g.b = gfs_cell_dirichlet_gradient_flux (cell, p->v->i, -1., 0.,NULL);
   }
 
   v0 = GFS_VALUE (cell, p->v);

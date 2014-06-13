@@ -133,7 +133,7 @@ static void compute_mixed_vorticity (FttCell * cell, gpointer * data)
   FttVector g;
 
   g_assert (((cell)->flags & GFS_FLAG_DIRICHLET) != 0);
-  gfs_cell_dirichlet_gradient (cell, u->i, -1, GFS_STATE (cell)->solid->fv, &g);
+  gfs_cell_dirichlet_gradient (cell, u->i, -1, GFS_STATE (cell)->solid->fv, &g,NULL);
   if (u->component == FTT_X)
     GFS_VALUE (cell, v) -= g.y;
   else

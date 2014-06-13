@@ -568,8 +568,10 @@ static void relax_dirichlet (FttCell * cell, RelaxParams * p)
   GfsGradient ng;
 
   g.a = GFS_VALUEI (cell, p->dia);
-  if (GFS_IS_MIXED (cell) && ((cell)->flags & GFS_FLAG_DIRICHLET) != 0)
-    g.b = gfs_cell_dirichlet_gradient_flux (cell, p->u, p->maxlevel, 0.);
+  if (GFS_IS_MIXED (cell) && ((cell)->flags & GFS_FLAG_DIRICHLET) != 0) {
+//    printf("relax_dirichlet\n");
+    g.b = gfs_cell_dirichlet_gradient_flux (cell, p->u, p->maxlevel, 0.,p->v); 
+  }
   else
     g.b = 0.;
 
@@ -687,8 +689,10 @@ static void residual_set_dirichlet (FttCell * cell, RelaxParams * p)
   GfsGradient ng;
 
   g.a = GFS_VALUEI (cell, p->dia);
-  if (GFS_IS_MIXED (cell) && ((cell)->flags & GFS_FLAG_DIRICHLET) != 0)
-    g.b = gfs_cell_dirichlet_gradient_flux (cell, p->u, p->maxlevel, GFS_STATE (cell)->solid->fv);
+  if (GFS_IS_MIXED (cell) && ((cell)->flags & GFS_FLAG_DIRICHLET) != 0) {
+//    printf("residual_set_dirichlet\n");
+    g.b = gfs_cell_dirichlet_gradient_flux (cell, p->u, p->maxlevel, GFS_STATE (cell)->solid->fv,p->v);
+  }
   else
     g.b = 0.;
 
@@ -1406,14 +1410,13 @@ static void diffusion_rhs (FttCell * cell, RelaxParams * p)
   FttCellNeighbors neighbor;
   FttCellFace face;
  
-  if(p->v) {
-    printf("Tracer exists (within diffusion_rhs) \n");
-  }
  
   if (GFS_IS_MIXED (cell)) {
     GfsSolidVector * solid = GFS_STATE (cell)->solid;
-    if (((cell)->flags & GFS_FLAG_DIRICHLET) != 0)
-      f = gfs_cell_dirichlet_gradient_flux (cell, p->u, -1, solid->fv);
+    if (((cell)->flags & GFS_FLAG_DIRICHLET) != 0) {
+//      printf("diffusion_rhs\n");
+      f = gfs_cell_dirichlet_gradient_flux (cell, p->u, -1, solid->fv,p->v);
+    }
     else
       f = solid->fv*solid->v.x;
   }
@@ -1458,8 +1461,6 @@ void gfs_diffusion_rhs (GfsDomain * domain,
   RelaxParams p;
   GSList * i;
 
-//  JBCRelaxParams p;
-
   g_return_if_fail (domain != NULL);
   g_return_if_fail (v != NULL);
   g_return_if_fail (rhs != NULL);
@@ -1478,8 +1479,7 @@ void gfs_diffusion_rhs (GfsDomain * domain,
   while (i) {
     GfsVariable * tempvar = i->data;
     if (GFS_IS_VARIABLE_TRACER_VOF(tempvar)) {
-      printf("%s is a VOF tracer\n",tempvar->name);
-      //GfsVariableTracerVOF * t = GFS_VARIABLE_TRACER_VOF (tempvar);
+//      printf("%s is a VOF tracer (diffusion_rhs) (v = %d) \n",tempvar->name,p.u);
       p.v = tempvar;
     }
     i = i->next;
@@ -1512,9 +1512,10 @@ static void diffusion_relax (FttCell * cell, RelaxParams * p)
   FttCellNeighbors neighbor;
   FttCellFace face;
 
-  if (GFS_IS_MIXED (cell) && ((cell)->flags & GFS_FLAG_DIRICHLET) != 0)
-    g.b = gfs_cell_dirichlet_gradient_flux (cell, p->u, p->maxlevel, 0.);
-
+  if (GFS_IS_MIXED (cell) && ((cell)->flags & GFS_FLAG_DIRICHLET) != 0) {
+//    printf("diffusion_relax\n");
+    g.b = gfs_cell_dirichlet_gradient_flux (cell, p->u, p->maxlevel, 0.,p->v);
+  }
   face.cell = cell;
   ftt_cell_neighbors (cell, &neighbor);
   for (face.d = 0; face.d < FTT_NEIGHBORS; face.d++) {
@@ -1580,8 +1581,10 @@ static void diffusion_residual (FttCell * cell, RelaxParams * p)
   a = GFS_VALUEI (cell, p->dia);
   if (GFS_IS_MIXED (cell)) {
     GfsSolidVector * solid = GFS_STATE (cell)->solid;
-    if (((cell)->flags & GFS_FLAG_DIRICHLET) != 0)
-      g.b = gfs_cell_dirichlet_gradient_flux (cell, p->u, -1, solid->fv);
+    if (((cell)->flags & GFS_FLAG_DIRICHLET) != 0) {
+//      printf("diffusion_residual for v = %d\n",p->u);
+      g.b = gfs_cell_dirichlet_gradient_flux (cell, p->u, -1, solid->fv,p->v);
+    }
     else
       g.b = solid->fv*solid->v.x;
   }
@@ -1629,6 +1632,7 @@ void gfs_diffusion_residual (GfsDomain * domain,
 			     GfsVariable * res)
 {
   RelaxParams p;
+  GSList * i;
 
   g_return_if_fail (domain != NULL);
   g_return_if_fail (u != NULL);
@@ -1641,6 +1645,18 @@ void gfs_diffusion_residual (GfsDomain * domain,
   p.dia = rhoc->i;
   p.res = res->i;
   p.metric = metric ? metric->i : FALSE;
+  p.v = NULL;
+
+  i = domain->variables;
+  while (i) {
+    GfsVariable * tempvar = i->data;
+    if (GFS_IS_VARIABLE_TRACER_VOF(tempvar)) {
+//      printf("%s is a VOF tracer (diffusion_residual) (v = %d) \n",tempvar->name,p.u);
+      p.v = tempvar;
+    }
+    i = i->next;
+  }
+ 
   gfs_domain_cell_traverse (domain, FTT_PRE_ORDER, FTT_TRAVERSE_LEAFS, -1,
 			    (FttCellTraverseFunc) diffusion_residual, &p);
 }

@@ -377,7 +377,7 @@ static void rhoe_update (FttCell * cell, gpointer * data)
   
   if (GFS_IS_MIXED (cell)) {
     if (((cell)->flags & GFS_FLAG_DIRICHLET) != 0)
-      f = gfs_cell_dirichlet_gradient_flux (cell, phi->i, -1, GFS_STATE (cell)->solid->fv);
+      f = gfs_cell_dirichlet_gradient_flux (cell, phi->i, -1, GFS_STATE (cell)->solid->fv,NULL);
     else
       f = GFS_STATE (cell)->solid->fv;
   }
@@ -718,7 +718,7 @@ static void save_fe (FttCell * cell, GfsSourceElectric * s)
     gdouble emod = 0., en = 0., a;
     GfsSolidVector * s = GFS_STATE (cell)->solid;
     FttVector g, n;
-    gfs_cell_dirichlet_gradient (cell, phi->i, -1, s->fv, &g);
+    gfs_cell_dirichlet_gradient (cell, phi->i, -1, s->fv, &g,NULL);
     gfs_solid_normal (cell, &n);
     a = ftt_vector_norm (&n);
     for (c = 0; c < FTT_DIMENSION; c++) {
