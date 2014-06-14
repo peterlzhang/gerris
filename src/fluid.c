@@ -1547,36 +1547,35 @@ void gfs_cell_dirichlet_gradient (FttCell * cell,
 
 
 /* Modify matrix m to include slip at the interface */
-    if ( v == 2 || v == 3) {
-      if(GFS_IS_VARIABLE_TRACER_VOF(vofv) && GFS_VALUE(cell,vofv) < 1. && GFS_VALUE(cell,vofv) > 0.) {
+    if ( v == 2 || v == 3) { // variable index corresponds to u or v
+      if(GFS_IS_VARIABLE_TRACER_VOF(vofv) && GFS_VALUE(cell,vofv) < 1. && GFS_VALUE(cell,vofv) > 0.) { // if the cell contains the interface
         ftt_cell_pos(cell,&pos);
 //        printf("vofv(%f,%f) =  %f\n",pos.x,pos.y,GFS_VALUE(cell,vofv));
         GfsVariableTracerVOF * t = GFS_VARIABLE_TRACER_VOF(vofv);
+
+        // Find vof facet end points
         FttVector q[FTT_DIMENSION*(FTT_DIMENSION - 1) + 1];
         guint ndim = gfs_vof_facet (cell, t, q, &interfacenorm);
         for (i = 0; i < ndim-1; i++ ) {
           p1.x = q[i].x; p1.y = q[i].y; p1.z = q[i].z;
           p2.x = q[i + 1].x; p2.y = q[i + 1].y; p2.z = q[i + 1].z;
         }
-//        printf("p1 = (%f,%f,%f)\n",p1.x,p1.y,p1.z);
-//        printf("p2 = (%f,%f,%f)\n",p2.x,p2.y,p2.z);
+
+        // Find solid face line points. NOTE: points are not necessairly the end points of the solid facet
+        // in the cell. Only used to determine intersection with vof facet
         GfsSolidVector * s = GFS_STATE (cell)->solid;
-//        printf("ca = (%f,%f)\n",s->ca.x,s->ca.y);
         s1.x = s->ca.x+(-solidnorm.y*h); 
         s1.y = s->ca.y+(solidnorm.x*h);
         s2.x = s->ca.x+(solidnorm.y*h);
         s2.y = s->ca.y+(-solidnorm.x*h); 
        
-//        printf("s1 = (%f,%f)\n",s1.x,s1.y);
-//        printf("s2 = (%f,%f)\n",s2.x,s2.y); 
-        
         // Compute triple contact point. This is the solution for infinitely long lines and
         // does not consider whether or not the intersection is within the cell
         tcp.x = ((s1.x*s2.y-s1.y*s2.x)*(p1.x-p2.x)-(s1.x-s2.x)*(p1.x*p2.y-p1.y*p2.x))/
                 ((s1.x-s2.x)*(p1.y-p2.y)-(s1.y-s2.y)*(p1.x-p2.x));
         tcp.y = ((s1.x*s2.y-s1.y*s2.x)*(p1.y-p2.y)-(s1.y-s2.y)*(p1.x*p2.y-p1.y*p2.x))/
                 ((s1.x-s2.x)*(p1.y-p2.y)-(s1.y-s2.y)*(p1.x-p2.x));
-//        printf("tcp = (%f,%f)\n",tcp.x,tcp.y);
+
         // Test to see if intersection is outside of cell. 
         // Note, this does not consider the case that the lines may not intersect. In almost parallel
         // lines the denominator approaches zero.
@@ -1590,29 +1589,23 @@ void gfs_cell_dirichlet_gradient (FttCell * cell,
               (&grad->x)[c] += m[c][i]*(GFS_VALUEI (n[i + 1], v) - v0);
             }
           }
-//        printf("for no slip: du/dx = %f, du/dy = %f\n",grad->x,grad->y);
           du.x = -solidnorm.y*grad->x+solidnorm.x*grad->y; // du/dt tangential derivative
           du.y = solidnorm.x*grad->x+solidnorm.y*grad->y; // du/dn normal derivative
-//        printf("du/dt = %f, du/dn = %f\n",du.x, du.y);
+          // Compute tau at center of the solid facet
           tau = fabs(du.x)+fabs(du.y);
 
+          // Compute distance from triple contact point to center of solid facet
           xtcp = pow(pow(s->ca.x-tcp.x,2)+pow(s->ca.y-tcp.y,2),0.5);
-//        printf("distance from ca to tcp = %f\n",xtcp);
         
-/*        gdouble theta = acos(solidnorm.x*0.+solidnorm.y*1.); // find angle between y unit vector and solid normal
-        printf("theta = %f\n",theta);
-        if (v == 2) {// u velocity
-          vtangent = v0*cos(theta);
-        }
-        else if ( v == 3 ) {
-          vtangent = v0*sin(theta);
-        }
-*/
-          xc = 1.*4./M_PI/tauc;
+          xc = 1.*4./M_PI/tauc; // x critical correspodning to tau critical
+
+          // Compute tau average
           tauavg = tauc*(tau/tauc+xc/xtcp*(1-log(xc/xtcp)));
-//        printf("tauavg = %f\n",tauavg);
+          
+          // Compute the modified slip length to be applied at the center of the solid facet.
           Ls = Ls0/pow(fabs(1-tauavg/tauc),0.5); // compute new slip lenght
-//          printf("modified Ls = %f\n",Ls); 
+          //printf("modified Ls = %f\n",Ls); 
+          //printf("modified Ls computed\n");
         }
       }
       else {
