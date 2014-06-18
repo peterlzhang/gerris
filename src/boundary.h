@@ -48,6 +48,7 @@ struct _GfsBc {
   FttFaceTraverseFunc bc, homogeneous_bc;
   FttFaceTraverseFunc homogeneous_bc_stencil;
   FttFaceTraverseFunc face_bc;
+  GfsVariable * vofv;
 };
 
 typedef struct _GfsBcClass    GfsBcClass;

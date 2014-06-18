@@ -1,0 +1,5 @@
+Updated 6/14/14
+Known bugs:
+  - floating point exception when solid facet directly alignes with grid edge
+  - floating point exception for boundary outflow condition on top and bottom edges of cell
+

@@ -39,6 +39,7 @@
 #include "config.h"
 #include "ftt.h"
 #include "boundary.h"
+#include "vof.h"
 
 /* GfsLocateArray: Object */
 
@@ -720,13 +721,13 @@ typedef struct {
   GfsVariable * v, * v1;
   FttComponent c;
   GfsLinearProblem * lp;
+  GfsVariable * vofv;
 } BcData;
 
 static void box_bc (GfsBox * box, BcData * p)
 {
   FttDirection d;  // Initialize variable 'd' of type FttDirection
   FttVector pos;
-
 
   for (d = 0; d < FTT_NEIGHBORS; d++) // for loop checking all directions. FTT_NEIGHBORS = 4 in 2D
     if (GFS_IS_BOUNDARY (box->neighbor[d])) { // Check if there is a boundary in direction d
@@ -738,40 +739,8 @@ static void box_bc (GfsBox * box, BcData * p)
       	b->type = GFS_BOUNDARY_CENTER_VARIABLE;
       	gfs_boundary_update (b);
       	bc->v = p->v1;
-/*        if (GFS_IS_BC_NAVIER(bc)) { // test to see if bc is navier type
-          printf("BC type is Navier\n");
-
-          gpointer JBC_data[4];
-          gdouble* interior_val;
-          gint i, LEVEL;
- 
-          LEVEL =  ftt_cell_depth (b->root);
-          printf("LEVEL = %d\n",LEVEL);
-          interior_val = (gdouble*) malloc(pow(2,LEVEL)*sizeof(gdouble));
- 
-          for(i = 0; i < pow(2,LEVEL); i++) {
-          interior_val[i] = i;
-          }
-          
-          JBC_data[0] = interior_val;
-          JBC_data[1] = &LEVEL;
-          JBC_data[2] = bc;
-          JBC_data[3] = &b->d;
-//          printf("interior_val = [%f, %f]\n",interior_val[0],interior_val[1]);
-
-           ftt_cell_traverse_boundary (b->root,b->d, FTT_PRE_ORDER, FTT_TRAVERSE_LEAFS, -1,
-             (FttCellTraverseFunc) build_A, JBC_data); 
-
-          printf("interior_val = [%f,%f]\n",interior_val[0],interior_val[1]);
-
-          free(interior_val);
-        } */
-/*
-      	b->v = p->v1;
-      	b->type = GFS_BOUNDARY_CENTER_VARIABLE;
-      	gfs_boundary_update (b);
-      	bc->v = p->v1;
-*/
+        bc->vofv = p->vofv;
+        
 	      ftt_face_traverse_boundary (b->root, b->d,
 				    FTT_PRE_ORDER, p->flags, p->max_depth,
 				    bc->bc, bc);
@@ -887,7 +856,28 @@ void gfs_domain_copy_bc (GfsDomain * domain,
 			 GfsVariable * v,
 			 GfsVariable * v1)
 {
-  BcData b = { flags, max_depth, v, v1, FTT_XYZ};
+  GfsVariable * vofv = NULL;
+  GSList * i;
+  BcData b;
+
+  b.flags = flags;
+  b.max_depth = max_depth;
+  b.v = v;
+  b.v1 = v1;
+  b.c = FTT_XYZ;
+  b.vofv = NULL;
+
+  i = domain->variables;
+  while(i) {
+    GfsVariable * tempvar = i->data;
+    if (GFS_IS_VARIABLE_TRACER_VOF(tempvar)) {
+//      printf("%s is a VOF tracer (diffusion_rhs) (v = %d) \n",tempvar->name,p.u);
+      b.vofv = tempvar;
+    }
+    i = i->next;
+  }
+
+//  BcData b = { flags, max_depth, v, v1, FTT_XYZ, vofv};
 
   g_return_if_fail (domain != NULL);
   g_return_if_fail (v != NULL);
@@ -986,7 +976,7 @@ void gfs_domain_homogeneous_bc (GfsDomain * domain,
 				GfsVariable * ov,
 				GfsVariable * v)
 {
-  BcData b = { flags, max_depth, v, ov, FTT_XYZ};
+  BcData b = { flags, max_depth, v, ov, FTT_XYZ, NULL};
 
   g_return_if_fail (domain != NULL);
   g_return_if_fail (ov != NULL);
@@ -1022,7 +1012,7 @@ void gfs_domain_homogeneous_bc_stencil (GfsDomain * domain,
 					GfsVariable * v,
 					GfsLinearProblem * lp)
 {
-  BcData b = { flags, max_depth, v, ov, FTT_XYZ, lp };
+  BcData b = { flags, max_depth, v, ov, FTT_XYZ, lp, NULL};
 
   g_return_if_fail (domain != NULL);
   g_return_if_fail (v != NULL);
@@ -1252,7 +1242,7 @@ void gfs_domain_face_bc (GfsDomain * domain,
 			 FttComponent c,
 			 GfsVariable * v)
 {
-  BcData b = { FTT_TRAVERSE_LEAFS, -1, v, v, c };
+  BcData b = { FTT_TRAVERSE_LEAFS, -1, v, v, c, NULL};
 
   g_return_if_fail (domain != NULL);
   g_return_if_fail (c == FTT_XYZ || (c >= 0 && c < FTT_DIMENSION));
@@ -1294,7 +1284,7 @@ static void box_depth (GfsBox * box, guint * depth)
 
 static gboolean domain_match (GfsDomain * domain)
 {
-  BcData b = { FTT_TRAVERSE_LEAFS, -1, NULL, NULL, FTT_XYZ };
+  BcData b = { FTT_TRAVERSE_LEAFS, -1, NULL, NULL, FTT_XYZ, NULL};
   gboolean changed = FALSE;
   gts_container_foreach (GTS_CONTAINER (domain), (GtsFunc) box_match, NULL);
   gts_container_foreach (GTS_CONTAINER (domain), (GtsFunc) box_receive_bc, &b);

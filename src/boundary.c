@@ -485,7 +485,60 @@ static void navier (FttCellFace * f, GfsBc * b)
   FttCell * leftcell, * leftleftcell, * rightcell, *rightrightcell;
   FttCell * leftcell_interior, * leftleftcell_interior, * rightcell_interior, * rightrightcell_interior;
   gdouble vleft, vright, vleftleft, vrightright, vb, v1;
-  gdouble temp_var;
+  gdouble temp_var, xtcp;
+  guint i;
+  FttVector p1, p2, w1, w2, pos, interfacenorm, tcp,xb;
+  gdouble tauc = 10000.;
+  gdouble xc, dudn, dudt, tauavg, tau, Ls0;
+
+  xc = gfs_function_face_value (GFS_BC_VALUE (b)->val, f)*4./M_PI/tauc;
+  Ls0 = lambda;
+
+  if(b->vofv && GFS_VALUE(f->neighbor,b->vofv) < 1. && GFS_VALUE(f->neighbor,b->vofv) > 0. ) {
+      ftt_cell_pos(f->neighbor,&pos);
+//      printf("T(%f,%f) = %f \n",pos.x,pos.y,GFS_VALUE(f->neighbor,b->vofv));
+      GfsVariableTracerVOF * t = GFS_VARIABLE_TRACER_VOF(b->vofv);
+      FttVector q[FTT_DIMENSION*(FTT_DIMENSION - 1) + 1];
+      guint ndim = gfs_vof_facet (f->neighbor, t, q, &interfacenorm);
+      for (i = 0; i < ndim-1; i++ ) {
+        p1.x = q[i].x; p1.y = q[i].y; p1.z = q[i].z;
+        p2.x = q[i + 1].x; p2.y = q[i + 1].y; p2.z = q[i + 1].z;
+      }
+//      printf("Vof facet (%f,%f)(%f,%f)\n",p1.x,p1.y,p2.x,p2.y);
+      // Find center of wall face and wall line 
+      if (f->d == FTT_RIGHT) {
+        w1.x = pos.x-h/2.; w1.y = pos.y + h/2.;
+        w2.x = pos.x-h/2.; w2.y = pos.y - h/2.;
+        xb.x = pos.x-h/2.; xb.y = pos.y;
+      }
+      else if (f->d == FTT_LEFT) {
+        w1.x = pos.x+h/2.; w1.y = pos.y + h/2.;
+        w2.x = pos.x+h/2.; w2.y = pos.y - h/2.;
+        xb.x = pos.x+h/2.; xb.y = pos.y;
+      }
+      else if (f->d == FTT_TOP) {
+        w1.x = pos.x-h/2.; w2.y = pos.y-h/2.;
+        w2.x = pos.x+h/2.; w2.y = pos.y-h/2.;
+        xb.x = pos.x; xb.y = pos.y-h/2.;
+      }
+      else if (f->d == FTT_BOTTOM) {
+        w1.x = pos.x-h/2.; w2.y = pos.y+h/2.;
+        w2.x = pos.x+h/2.; w2.y = pos.y+h/2.;
+        xb.x = pos.x; xb.y = pos.y+h/2.;
+      }
+//      printf("wall segment (%f,%f)(%f,%f)\n",w1.x,w1.y,w2.x,w2.y);
+      tcp.x = ((w1.x*w2.y-w1.y*w2.x)*(p1.x-p2.x)-(w1.x-w2.x)*(p1.x*p2.y-p1.y*p2.x))/
+              ((w1.x-w2.x)*(p1.y-p2.y)-(w1.y-w2.y)*(p1.x-p2.x));
+      tcp.y = ((w1.x*w2.y-w1.y*w2.x)*(p1.y-p2.y)-(w1.y-w2.y)*(p1.x*p2.y-p1.y*p2.x))/
+              ((w1.x-w2.x)*(p1.y-p2.y)-(w1.y-w2.y)*(p1.x-p2.x));
+
+      xtcp = pow(pow(xb.x-tcp.x,2)+pow(xb.y-tcp.y,2),0.5);
+ 
+//      else {
+//        printf("TCP = (%f,%f), Distance to TCP = %f\n",tcp.x,tcp.y,xtcp);
+//      }
+  }
+
 
 // Determine direction of left and right cells in the global coodinate system
   if (f->d == FTT_RIGHT) {
@@ -508,6 +561,7 @@ static void navier (FttCellFace * f, GfsBc * b)
   leftcell = ftt_cell_neighbor(f->cell, dleft);
   rightcell = ftt_cell_neighbor(f->cell, dright);
   vb = (GFS_VALUE(f->cell, b->v)+GFS_VALUE(f->neighbor,b->v))/2.;
+  dudn = (GFS_VALUE(f->neighbor,b->v)-GFS_VALUE(f->cell, b->v))/h; // dudn found initially using no slip
   v1 = GFS_VALUE(f->neighbor, b->v);
 
 // Compute velocity along the boundary
@@ -518,6 +572,7 @@ static void navier (FttCellFace * f, GfsBc * b)
     vright = (GFS_VALUE(rightcell, b->v)+GFS_VALUE(rightcell_interior, b->v))/2.;
     vrightright = (GFS_VALUE(rightrightcell, b->v)+GFS_VALUE(rightrightcell_interior, b->v))/2.;
     temp_var = (-3.*vb+4.*vright-vrightright);
+    dudt = temp_var/(2.*h);
   }
   else if (!rightcell) { // if no right neighbor, compute left sided difference
     leftleftcell = ftt_cell_neighbor(leftcell, dleft);
@@ -526,6 +581,7 @@ static void navier (FttCellFace * f, GfsBc * b)
     vleft = (GFS_VALUE(leftcell, b->v)+GFS_VALUE(leftcell_interior, b->v))/2.;
     vleftleft = (GFS_VALUE(leftleftcell, b->v)+GFS_VALUE(leftleftcell_interior, b->v))/2.;
     temp_var = 3.*vb-4.*vleft+vleftleft;
+    dudt = temp_var/(2.*h);
   }
   else {
     leftcell_interior = ftt_cell_neighbor(leftcell, f->d);
@@ -533,16 +589,30 @@ static void navier (FttCellFace * f, GfsBc * b)
     vleft = (GFS_VALUE(leftcell, b->v)+GFS_VALUE(leftcell_interior, b->v))/2.;
     vright = (GFS_VALUE(rightcell, b->v)+GFS_VALUE(rightcell_interior, b->v))/2.;
     temp_var = vright-vleft;
+    dudt = temp_var/(2.*h);
   }
 
+  if (b->vofv && GFS_VALUE(f->neighbor,b->vofv) < 1. && GFS_VALUE(f->neighbor,b->vofv) > 0. ) {
+      if (tcp.x > pos.x+h/2. || tcp.x < pos.x-h/2. || tcp.y > pos.y+h/2. || tcp.y < pos.y-h/2.) {
+//        printf("WARNING: TCP = (%f,%f) outside cell %f < x < %f, %f < y < %f\n",tcp.x,tcp.y,pos.x-h/2.,pos.x+h/2.,pos.y-h/2.,pos.y+h/2.);
+      }
+      else {
+        tau = fabs(dudn)+fabs(dudt);
+        tauavg = tauc*(tau/tauc+xc/xtcp*(1-log(xc/xtcp)));
+        lambda = Ls0/pow(fabs(1-tauavg/tauc),0.5);
+//        if (lambda > 2.*Ls0) {
+//          printf("Modified Ls = %f > 2*Ls0\n",lambda);
+//        } 
+      }
+  }
 // Prescribe ghost cell value  
   GFS_VALUE (f->cell, b->v) =
     (2.*gfs_function_face_value (GFS_BC_VALUE (b)->val, f)*h
     - v1*(h-2.*lambda)+lambda*temp_var)/(h+2.*lambda);
 
 //  printf("JBC USED!!!!!!\n");
-
 */
+
 }
 
 static void face_navier (FttCellFace * f, GfsBc * b)

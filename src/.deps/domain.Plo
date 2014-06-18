@@ -130,7 +130,8 @@ domain.lo: domain.c /usr/include/math.h /usr/include/features.h \
  /usr/include/glib-2.0/gmodule.h ../config.h /usr/local/include/mpi.h \
  /usr/local/include/mpio.h /usr/local/include/mpi.h surface.h advection.h \
  poisson.h source.h event.h simulation.h timestep.h variable.h solid.h \
- adaptive.h mpi_boundary.h metric.h map.h version.h init.h ftt_internal.c
+ adaptive.h mpi_boundary.h metric.h map.h version.h init.h vof.h \
+ ftt_internal.c
 
 /usr/include/math.h:
 
@@ -503,5 +504,7 @@ map.h:
 version.h:
 
 init.h:
+
+vof.h:
 
 ftt_internal.c:

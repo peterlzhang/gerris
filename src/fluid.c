@@ -1526,14 +1526,15 @@ void gfs_cell_dirichlet_gradient (FttCell * cell,
     gdouble mmod[N_CELLS - 1][N_CELLS - 1];
     FttVector solidnorm;
     gdouble norm_mag;
-    gdouble Ls = 0.1, Ls0 = 0.1;
+    gdouble Ls = 0.01, Ls0 = 0.01;
     gdouble temp, tau, tauavg, xtcp, xc, vtangent, tauc = 10000;
     FttVector pos, q, interfacenorm, p1, p2, s1, s2, tcp, du;
     gdouble h = ftt_cell_size(cell);
 
-    
-
+    // Initialize gradient through solid face as zero
     grad->x = grad->y = grad->z = 0.;
+
+    // Compute m
     if (!cell_bilinear (cell, n, &GFS_STATE (cell)->solid->ca, 
 			gfs_cell_cm, max_level, m))
       return;
@@ -1604,6 +1605,9 @@ void gfs_cell_dirichlet_gradient (FttCell * cell,
           
           // Compute the modified slip length to be applied at the center of the solid facet.
           Ls = Ls0/pow(fabs(1-tauavg/tauc),0.5); // compute new slip lenght
+          if (Ls > 2.*Ls0) {
+            printf("Modified Ls = %f > 2*Ls0\n",Ls);
+          }
           //printf("modified Ls = %f\n",Ls); 
           //printf("modified Ls computed\n");
         }
@@ -1615,14 +1619,14 @@ void gfs_cell_dirichlet_gradient (FttCell * cell,
       
         inverse(m);
     ////////////////////////////////////////////////////////////
-      // Navier slip linear interpolation at the solid surface
-/*      for (i = 0; i < N_CELLS - 1; i++) {
+/*      // Navier slip linear interpolation at the solid surface
+      for (i = 0; i < N_CELLS - 1; i++) {
         mmod[i][0] = m[i][0]+Ls*solidnorm.x;
         mmod[i][1] = m[i][1]+Ls*solidnorm.y;
         mmod[i][2] = m[i][2] + Ls*m[i][1]*solidnorm.x + Ls*m[i][0]*solidnorm.y;
       }
-    ////////////////////////////////////////////////////////////
-*/
+*/    ////////////////////////////////////////////////////////////
+
     ////////////////////////////////////////////////////////////
       // JBC slip linear interpolation at the solid surface
         for (i = 0; i < N_CELLS - 1; i++) {
