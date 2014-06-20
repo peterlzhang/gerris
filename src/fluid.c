@@ -1527,7 +1527,7 @@ void gfs_cell_dirichlet_gradient (FttCell * cell,
     FttVector solidnorm;
     gdouble norm_mag;
     gdouble Ls = 0.01, Ls0 = 0.01;
-    gdouble temp, tau, tauavg, xtcp, xc, vtangent, tauc = 10000;
+    gdouble temp, tau, tauavg, xtcp, xc, vtangent, tauc = 100;
     FttVector pos, q, interfacenorm, p1, p2, s1, s2, tcp, du;
     gdouble h = ftt_cell_size(cell);
 
@@ -1606,7 +1606,7 @@ void gfs_cell_dirichlet_gradient (FttCell * cell,
           // Compute the modified slip length to be applied at the center of the solid facet.
           Ls = Ls0/pow(fabs(1-tauavg/tauc),0.5); // compute new slip lenght
           if (Ls > 2.*Ls0) {
-            printf("Modified Ls = %f > 2*Ls0\n",Ls);
+//            printf("Modified Ls = %f > 2*Ls0\n",Ls);
           }
           //printf("modified Ls = %f\n",Ls); 
           //printf("modified Ls computed\n");
@@ -1619,23 +1619,23 @@ void gfs_cell_dirichlet_gradient (FttCell * cell,
       
         inverse(m);
     ////////////////////////////////////////////////////////////
-/*      // Navier slip linear interpolation at the solid surface
+      // Navier slip linear interpolation at the solid surface
       for (i = 0; i < N_CELLS - 1; i++) {
         mmod[i][0] = m[i][0]+Ls*solidnorm.x;
         mmod[i][1] = m[i][1]+Ls*solidnorm.y;
         mmod[i][2] = m[i][2] + Ls*m[i][1]*solidnorm.x + Ls*m[i][0]*solidnorm.y;
       }
-*/    ////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////
-      // JBC slip linear interpolation at the solid surface
+/*      // JBC slip linear interpolation at the solid surface
         for (i = 0; i < N_CELLS - 1; i++) {
           mmod[i][0] = m[i][0]+Ls*solidnorm.x-Ls*solidnorm.y;
           mmod[i][1] = m[i][1]+Ls*solidnorm.y+Ls*solidnorm.x;
           mmod[i][2] = m[i][2] + Ls*m[i][1]*solidnorm.x + Ls*m[i][0]*solidnorm.y
                       -Ls*m[i][1]*solidnorm.y+Ls*m[i][0]*solidnorm.x;
         }
-    ////////////////////////////////////////////////////////////
+*/    ////////////////////////////////////////////////////////////
 
         inverse(mmod);
       // set m equal to mmod 
