@@ -870,8 +870,8 @@ void gfs_domain_copy_bc (GfsDomain * domain,
   i = domain->variables;
   while(i) {
     GfsVariable * tempvar = i->data;
-    if (GFS_IS_VARIABLE_TRACER_VOF(tempvar)) {
-//      printf("%s is a VOF tracer (diffusion_rhs) (v = %d) \n",tempvar->name,p.u);
+    if (GFS_IS_VARIABLE_TRACER_VOF_HEIGHT(tempvar)) {
+//      printf("%s is a VOF tracer height (diffusion_rhs) \n",tempvar->name);
       b.vofv = tempvar;
     }
     i = i->next;

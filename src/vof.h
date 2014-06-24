@@ -182,6 +182,8 @@ GfsVariable * gfs_closest_height   (FttCell * cell,
 				    FttComponent c,
 				    gdouble * orientation);
 
+gdouble  get_dynamic_contact_angle(FttCell * cell,
+            GfsVariable * vofv,FttDirection d);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

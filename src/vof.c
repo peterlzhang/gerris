@@ -3263,6 +3263,7 @@ static gdouble contact_angle_bc (FttCell * cell, HFState * hf)
 
 static void height_contact_normal_bc (FttCell * cell, HFState * hf)
 {
+//  printf("height_contact_normal_bc called\n");
   GfsVariable * h = boundary_hit (cell, hf);
   if (h) {
     /* column hit boundary */
@@ -3297,9 +3298,23 @@ static void height_contact_normal_bc (FttCell * cell, HFState * hf)
       }
       /* contact line */
       else {
-	gdouble theta = contact_angle_bc (cell, hf);
+  FttVector pos;
+  ftt_cell_pos(cell,&pos);
+  static gdouble theta;
+//	theta = contact_angle_bc (cell, hf);
+    if (FTT_CELL_IS_LEAF(cell)) {
+//	    theta = contact_angle_bc (cell, hf);
+      theta = get_dynamic_contact_angle(cell,hf->f,FTT_OPPOSITE_DIRECTION(hf->d));
+      theta = M_PI-theta;
+    }
+    if (hf->d == 2 || hf->d == 3) {
+      theta = M_PI/2.;
+    }
+
 	if ((h == hb && theta < atan (SLOPE_MAX)) || 
 	    (h == ht && theta > M_PI - atan (SLOPE_MAX))) {
+
+    printf("height_contact_normal used for hf->d = %d, hf->c = %d, theta(%f,%f) = %f\n",hf->d, hf->c,pos.x,pos.y,theta*180/M_PI);
 	  gdouble orientation = (h == hb ? 1. : -1.);
 	  FttVector m = { orientation*sin(theta), cos(theta), 0. };
 	  gdouble alpha = gfs_plane_alpha (&m, GFS_VALUE (cell, hf->f));
@@ -3319,8 +3334,55 @@ static void height_contact_normal_bc (FttCell * cell, HFState * hf)
   }
 }
 
+/* get_dynamic_contact_angle
+ * finds the angle that the vof facet makes with the wall normal to direction 
+ * theta is in the angle towards positive x and y directions.
+ */
+gdouble get_dynamic_contact_angle(FttCell * cell, GfsVariable * vofv, FttDirection d)
+{
+  FttVector p1, p2, interfacenorm;
+  guint i;
+  gdouble alpha, theta;
+  GfsVariableTracerVOF * t = GFS_VARIABLE_TRACER_VOF(vofv);
+  FttVector q[FTT_DIMENSION*(FTT_DIMENSION - 1) + 1];
+  guint ndim = gfs_vof_facet (cell, t, q, &interfacenorm);
+  for (i = 0; i < ndim-1; i++ ) {
+    p1.x = q[i].x; p1.y = q[i].y; p1.z = q[i].z;
+    p2.x = q[i + 1].x; p2.y = q[i + 1].y; p2.z = q[i + 1].z;
+  }
+  alpha = atan2(p2.y-p1.y,p2.x-p1.x);
+  if (alpha < 0) { alpha = alpha+M_PI; }
+
+  if (d == FTT_RIGHT) {
+    if (alpha > M_PI/2.) { theta = 3.*M_PI/2.-alpha; }
+    else if (alpha < M_PI/2.) { theta = M_PI/2.-alpha; }
+  }
+  else if (d == FTT_LEFT) {
+    if (alpha > M_PI/2.) { theta = alpha-M_PI/2.; }
+    else if (alpha < M_PI/2.) { theta = alpha+M_PI/2.; }
+  }
+  else if (d == FTT_TOP) {
+    theta = alpha;
+  }
+  else if (d == FTT_BOTTOM) {
+    theta = M_PI-alpha;
+  }
+
+  printf("get_dynamic_contact_angle: p1 = (%f, %f) p2 = (%f, %f), theta = %f\n",p1.x,p1.y,p2.x,p2.y,theta*180./M_PI);
+
+  return theta;
+
+}
+
+
 static void contact_angle_height (FttCell * cell, GfsVariable * h, HFState * hf)
 {
+//  printf("contact_angle_height called\n");
+  FttVector pos;
+/*  ftt_cell_pos(cell,&pos);
+  if (GFS_VALUE(cell,h) < 1. && GFS_VALUE(cell,h) > 0. ) {
+    printf("%s: contact angle height called for boundary cell at (%f,%f)\n",h->name,pos.x,pos.y); 
+  } */
   if (GFS_HAS_DATA (cell, h)) {
     FttCell * neighbor = ftt_cell_neighbor (cell, hf->d);
     if (!neighbor) /* boundary cell is a one-sided solid boundary: give up */
@@ -3330,7 +3392,22 @@ static void contact_angle_height (FttCell * cell, GfsVariable * h, HFState * hf)
      * The boundary condition is not evaluated in the cell
      * containing the contact line.
      */
-    gdouble theta = contact_angle_bc (cell, hf);
+    static gdouble theta;
+    static guint counter = 0;
+//    theta = contact_angle_bc (cell, hf);
+    if (FTT_CELL_IS_LEAF(cell) && hf->d==1) {
+      if (counter < 1) {
+  	    theta = contact_angle_bc (cell, hf);
+        counter += 1;
+      }
+      else {
+      theta = get_dynamic_contact_angle(cell,hf->f,FTT_OPPOSITE_DIRECTION(hf->d));
+      theta = M_PI-theta;
+      }
+    }
+    else { 
+      theta = M_PI/2.;
+    }
     if (theta == M_PI/2.)
       GFS_VALUE (neighbor, h) = GFS_VALUE (cell, h);
     else {
@@ -3346,10 +3423,16 @@ static void contact_angle_height (FttCell * cell, GfsVariable * h, HFState * hf)
        * angle is smaller than THETA_MIN (or larger than M_PI -
        * THETA_MIN), the contact angle will saturate at THETA_MIN = atan (1./SLOPE_MAX).
        */
+    ftt_cell_pos(cell,&pos);     
+     printf("height_contact_tangential used for hf->d = %d, hf->c = %d, theta(%f,%f) = %f\n",hf->d, hf->c,pos.x,pos.y, theta*180./M_PI);
       gdouble cotantheta = (theta < THETA_MIN ? SLOPE_MAX : 
 			    theta > M_PI - THETA_MIN ? - SLOPE_MAX :
 			    1./tan(theta));
       GFS_VALUE (neighbor, h) = GFS_VALUE (cell, h) + cotantheta;
+//      ftt_cell_pos(cell,&pos);
+//      printf("pos (%f,%f)\n",pos.x,pos.y);
+//      printf("contact_angle_height: theta = %f\n",theta*180/M_PI);
+//      printf("d = %d, (%f,%f) = %f + %f = %f\n",FTT_OPPOSITE_DIRECTION(hf->d),pos.x,pos.y,GFS_VALUE (cell, h),cotantheta,GFS_VALUE (cell, h) + cotantheta);
     }
   }
 }
