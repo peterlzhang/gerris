@@ -3012,6 +3012,7 @@ typedef struct {
   GfsBc * angle; /* contact angle BC */
   FttComponent c; /* x, y or z */
   FttDirection d;
+  gdouble instant_angle;
 } HFState;
 
 static gboolean is_interfacial (FttCell * cell, gpointer data)
@@ -3264,7 +3265,7 @@ static gdouble contact_angle_bc (FttCell * cell, HFState * hf)
 static void height_contact_normal_bc (FttCell * cell, HFState * hf)
 {
 //  printf("height_contact_normal_bc called\n");
-  GfsVariable * h = boundary_hit (cell, hf);
+  GfsVariable * h = boundary_hit (cell, hf); //returns hb or ht or null
   if (h) {
     /* column hit boundary */
     FttComponent oc = FTT_ORTHOGONAL_COMPONENT (hf->c);
@@ -3300,21 +3301,36 @@ static void height_contact_normal_bc (FttCell * cell, HFState * hf)
       else {
   FttVector pos;
   ftt_cell_pos(cell,&pos);
-  static gdouble theta;
-//	theta = contact_angle_bc (cell, hf);
-    if (FTT_CELL_IS_LEAF(cell)) {
-//	    theta = contact_angle_bc (cell, hf);
+  static gdouble theta, thetaold, counter = 0;
+    if (hf->d == 1 ) {
+      if (FTT_CELL_IS_LEAF(cell)) {
       theta = get_dynamic_contact_angle(cell,hf->f,FTT_OPPOSITE_DIRECTION(hf->d));
       theta = M_PI-theta;
+      thetaold = theta;
+      }
+      else {
+        theta = thetaold;
+      }
+      if (theta == 0 || theta == M_PI) {
+//        printf("returned theta - 180\n");
+//        theta = contact_angle_bc (cell, hf);
+        theta = M_PI/2.;
+      }
     }
-    if (hf->d == 2 || hf->d == 3) {
+    else {
       theta = M_PI/2.;
     }
-
+/* 
+ if(FTT_CELL_IS_LEAF(cell)) {
+    printf("LEAF: height_contact_normal used for hf->d = %d, hf->c = %d, theta(%f,%f) = %f\n",hf->d, hf->c,pos.x,pos.y,theta*180/M_PI);
+  }
+  else {
+    printf("NOT LEAF: height_contact_normal used for hf->d = %d, hf->c = %d, theta(%f,%f) = %f\n",hf->d, hf->c,pos.x,pos.y,theta*180/M_PI);
+  }
+*/
 	if ((h == hb && theta < atan (SLOPE_MAX)) || 
 	    (h == ht && theta > M_PI - atan (SLOPE_MAX))) {
 
-    printf("height_contact_normal used for hf->d = %d, hf->c = %d, theta(%f,%f) = %f\n",hf->d, hf->c,pos.x,pos.y,theta*180/M_PI);
 	  gdouble orientation = (h == hb ? 1. : -1.);
 	  FttVector m = { orientation*sin(theta), cos(theta), 0. };
 	  gdouble alpha = gfs_plane_alpha (&m, GFS_VALUE (cell, hf->f));
@@ -3368,7 +3384,7 @@ gdouble get_dynamic_contact_angle(FttCell * cell, GfsVariable * vofv, FttDirecti
     theta = M_PI-alpha;
   }
 
-  printf("get_dynamic_contact_angle: p1 = (%f, %f) p2 = (%f, %f), theta = %f\n",p1.x,p1.y,p2.x,p2.y,theta*180./M_PI);
+//  printf("get_dynamic_contact_angle: p1 = (%f, %f) p2 = (%f, %f), theta = %f\n",p1.x,p1.y,p2.x,p2.y,theta*180./M_PI);
 
   return theta;
 
@@ -3392,22 +3408,36 @@ static void contact_angle_height (FttCell * cell, GfsVariable * h, HFState * hf)
      * The boundary condition is not evaluated in the cell
      * containing the contact line.
      */
-    static gdouble theta;
+    static gdouble theta, thetaold;
     static guint counter = 0;
-//    theta = contact_angle_bc (cell, hf);
-    if (FTT_CELL_IS_LEAF(cell) && hf->d==1) {
-      if (counter < 1) {
-  	    theta = contact_angle_bc (cell, hf);
-        counter += 1;
-      }
-      else {
+
+    if (hf->d == 1 ) {
+      if (FTT_CELL_IS_LEAF(cell)) {
       theta = get_dynamic_contact_angle(cell,hf->f,FTT_OPPOSITE_DIRECTION(hf->d));
       theta = M_PI-theta;
+      thetaold = theta;
+      }
+      else {
+        theta = thetaold;
+      }
+      if (theta == 0 || theta == M_PI) {
+//        theta = contact_angle_bc (cell, hf);
+          theta = M_PI/2.;
       }
     }
-    else { 
+    else {
       theta = M_PI/2.;
     }
+
+    ftt_cell_pos(cell,&pos);     
+/*
+  if (FTT_CELL_IS_LEAF(cell)) {
+     printf("LEAF: height_contact_tangential used for hf->d = %d, hf->c = %d, theta(%f,%f) = %f\n",hf->d, hf->c,pos.x,pos.y, theta*180./M_PI);
+  }
+  else {
+     printf("NOT LEAF: height_contact_tangential used for hf->d = %d, hf->c = %d, theta(%f,%f) = %f\n",hf->d, hf->c,pos.x,pos.y, theta*180./M_PI);
+  }
+*/
     if (theta == M_PI/2.)
       GFS_VALUE (neighbor, h) = GFS_VALUE (cell, h);
     else {
@@ -3423,8 +3453,6 @@ static void contact_angle_height (FttCell * cell, GfsVariable * h, HFState * hf)
        * angle is smaller than THETA_MIN (or larger than M_PI -
        * THETA_MIN), the contact angle will saturate at THETA_MIN = atan (1./SLOPE_MAX).
        */
-    ftt_cell_pos(cell,&pos);     
-     printf("height_contact_tangential used for hf->d = %d, hf->c = %d, theta(%f,%f) = %f\n",hf->d, hf->c,pos.x,pos.y, theta*180./M_PI);
       gdouble cotantheta = (theta < THETA_MIN ? SLOPE_MAX : 
 			    theta > M_PI - THETA_MIN ? - SLOPE_MAX :
 			    1./tan(theta));
@@ -3453,10 +3481,20 @@ static void box_periodic_bc (GfsBox * box, HFState * hf)
 				  (FttCellTraverseFunc) height_periodic_bc, hf);
 }
 
+static void instant_angle(FttCell * cell, HFState * hf)
+{
+  if (is_interfacial (cell, hf->f)) {
+    printf("Cell contains interface\n");
+  }
+
+}
 static void box_contact_bc (GfsBox * box, HFState * hf)
 {
+
   /* fixme: 2D only */
   for (hf->d = 0; hf->d < FTT_NEIGHBORS; hf->d++)
+//    ftt_cell_traverse_boundary(box->root, hf->d,FTT_POST_ORDER,FTT_TRAVERSE_ALL,-1,instant_angle,hf);
+
     if (GFS_IS_BOUNDARY (box->neighbor[hf->d]) && 
 	!GFS_IS_BOUNDARY_PERIODIC (box->neighbor[hf->d])) {
       hf->angle = gfs_boundary_lookup_bc (GFS_BOUNDARY (box->neighbor[hf->d]), hf->f);

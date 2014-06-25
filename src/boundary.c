@@ -423,14 +423,12 @@ static void bc_angle_read (GtsObject ** o, GtsFile * fp)
   if (!GFS_IS_VARIABLE_TRACER_VOF_HEIGHT (GFS_BC (*o)->v))
     gts_file_error (fp, "expecting a GfsVariableTracerVOFHeight");
   gfs_function_set_units (GFS_BC_VALUE (*o)->val, 0.);
-  printf("bc_angle_read called");
 }
 
 static void gfs_bc_angle_init (GfsBc * object)
 {
   /* use zero for Neumann condition for the VOF tracer */
   object->bc = (FttFaceTraverseFunc) homogeneous_neumann;
-  printf("homogeneous neumann called");
 }
 
 static void gfs_bc_angle_class_init (GtsObjectClass * klass)
@@ -465,11 +463,23 @@ GfsBcClass * gfs_bc_angle_class (void)
  * \beginobject{GfsBcNavier}
  */
 
+static gdouble tangential_velocity_gradient(FttCell * cell, FttDirection d, GfsVariable * v)
+{
+  gdouble dudt;
+  FttComponent c = d % 2;
+  FttComponent oc = FTT_ORTHOGONAL_COMPONENT(c);
+  FttDirection nd = 2*oc;
+  FttCell * n1 = ftt_cell_neighbor (cell, nd), * n2 = ftt_cell_neighbor (cell, nd + 1);
+  gdouble h = ftt_cell_size(cell);
+
+  dudt = (GFS_VALUE(n1,v)-GFS_VALUE(n2,v))/(2.*h);  
+
+  return dudt;
+}
+
+
 static void navier (FttCellFace * f, GfsBc * b)
 { 
-//  static int count = 0;
-//  count += 1;
-//  printf("Navier BC called %d\n",count);
 
   gdouble h = ftt_cell_size (f->cell);
   gdouble lambda = gfs_function_face_value (GFS_BC_NAVIER (b)->lambda, f);
@@ -481,13 +491,7 @@ static void navier (FttCellFace * f, GfsBc * b)
   gdouble temp_var, xtcp;
   guint i;
   gdouble dudt;
-//  FttVector p1, p2, w1, w2, pos, interfacenorm, tcp,xb, face_pos;
-//  gdouble tauc = 10000.;
-//  gdouble xc, dudn, dudt, tauavg, tau, Ls0, tau0, tau_top, tau_bottom;
   
-//  gdouble rc_top, rc_bottom, dr_top, dr_bottom;
-//  gdouble theta, alpha, beta;
-//  gdouble v0 = gfs_function_face_value (GFS_BC_VALUE (b)->val, f);
 
 //  ftt_cell_pos(f->neighbor, &pos);
 //  ftt_face_pos(f, &face_pos);
@@ -626,16 +630,16 @@ static void navier (FttCellFace * f, GfsBc * b)
 */
 
   FttVector pos, p1, p2, interfacenorm, tcp;
-//  gdouble theta = M_PI/3., beta = M_PI-theta;
   gdouble rc1, rc2, dudn,tau0, tau1, tau2, tauc = 10000, r = h/2., alpha;
   gdouble Ls0 = lambda, theta, beta;
   gdouble testvar;
   gdouble r01, r02, U, tauavgmod;
 
-
+  
   ftt_cell_pos(f->neighbor,&pos);
   if(b->vofv && GFS_VALUE(f->neighbor,b->vofv) < 1. && GFS_VALUE(f->neighbor,b->vofv) > 0. ) {
-    printf("cell contains interface position (%f,%f)\n",pos.x,pos.y);
+    U = fabs(GFS_VALUE(f->neighbor,b->v)-gfs_function_face_value (GFS_BC_VALUE (b)->val, f));
+    printf("cell contains interface position (%f,%f), V = %f\n",pos.x,pos.y,U);
     GfsVariableTracerVOF * t = GFS_VARIABLE_TRACER_VOF(b->vofv);
     FttVector q[FTT_DIMENSION*(FTT_DIMENSION - 1) + 1];
     guint ndim = gfs_vof_facet (f->neighbor, t, q, &interfacenorm);
@@ -651,8 +655,8 @@ static void navier (FttCellFace * f, GfsBc * b)
       beta = M_PI-theta;
       printf("theta = %f, beta = %f\n",theta*180./M_PI,beta*180./M_PI);
 
-      tau0 = fabs(dudn);//+fabs(dudt);
-      U = gfs_function_face_value (GFS_BC_VALUE (b)->val, f); /* FIX ME: should be relative velocity of interface to wall */
+//      tau0 = fabs(dudn); /* Simulation stress for Navier BC */
+      tau0 = fabs(dudn)+fabs(dudt); /* Simulation stress for Joseph's BC */
       r01 = (2*sin(theta)*sin(theta))/(theta-sin(theta)*cos(theta))*U/tau0;
       r02 = (2*sin(beta)*sin(beta))/(beta-sin(beta)*cos(beta))*U/tau0;
       rc1 = U/tauc*(2*sin(theta)*sin(theta))/(theta-sin(theta)*cos(theta));
@@ -679,8 +683,8 @@ static void navier (FttCellFace * f, GfsBc * b)
       beta = M_PI-theta;
       printf("theta = %f, beta = %f\n",theta*180./M_PI,beta*180./M_PI);
 
-      tau0 = fabs(dudn);//+fabs(dudt);
-      U = gfs_function_face_value (GFS_BC_VALUE (b)->val, f); /* FIX ME: should be relative velocity of interface to wall */
+//      tau0 = fabs(dudn); /* Simulation stress for Navier BC */
+      tau0 = fabs(dudn)+fabs(dudt); /* Simulation stress for Joseph's BC */
       r01 = (2*sin(theta)*sin(theta))/(theta-sin(theta)*cos(theta))*U/tau0;
       r02 = (2*sin(beta)*sin(beta))/(beta-sin(beta)*cos(beta))*U/tau0;
       rc1 = U/tauc*(2*sin(theta)*sin(theta))/(theta-sin(theta)*cos(theta));
@@ -709,16 +713,17 @@ static void navier (FttCellFace * f, GfsBc * b)
   }
 
 ///////////// Navier Boundary condition ///////////////////////
+/*
   GFS_VALUE (f->cell, b->v) = 
     (2.*gfs_function_face_value (GFS_BC_VALUE (b)->val, f)*h
      - (h - 2.*lambda)*GFS_VALUE (f->neighbor, b->v))/(h + 2.*lambda); 
-
+*/
 ////////////// Joseph's Boundary condition ///////////////////////
 // Prescribe ghost cell value  
-/*  GFS_VALUE (f->cell, b->v) =
+  GFS_VALUE (f->cell, b->v) =
     (2.*gfs_function_face_value (GFS_BC_VALUE (b)->val, f)*h
     - v1*(h-2.*lambda)+lambda*temp_var)/(h+2.*lambda);
-*/
+
 //  printf("JBC USED!!!!!!\n");
 
 }
