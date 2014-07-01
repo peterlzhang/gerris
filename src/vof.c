@@ -3278,48 +3278,53 @@ static void height_contact_normal_bc (FttCell * cell, HFState * hf)
       GFS_VALUE (cell, h) -= BOUNDARY_HIT;
       height_propagation_from_boundary (cell, hf, h);
     }
+
     else {
       GfsVariable * hb, * ht; /* use symmetries */
       if (hf->d % 2) {
-	hb = hf->hb; ht = hf->ht;
+	      hb = hf->hb; ht = hf->ht;
       }
       else {
-	hb = hf->ht; ht = hf->hb;
+	      hb = hf->ht; ht = hf->hb;
       }
+
       gdouble full_or_empty = (h != hb);
       if (n1 && GFS_VALUE (n1, hf->f) != full_or_empty) {
-	n1 = n2; nd++;
+	      n1 = n2; nd++;
       }
+
       if (!n1 || GFS_VALUE (n1, hf->f) != full_or_empty) {
 	/* column is not neighbouring a full or empty cell => it is not a contact line */
 	/* the boundary is dry or wet i.e. the column height is well defined */
 	/* reset the BOUNDARY_HIT flag on the whole column */
-	GFS_VALUE (cell, h) -= BOUNDARY_HIT;
-	height_propagation_from_boundary (cell, hf, h);
+	      GFS_VALUE (cell, h) -= BOUNDARY_HIT;
+	      height_propagation_from_boundary (cell, hf, h);
       }
       /* contact line */
       else {
-  FttVector pos;
-  ftt_cell_pos(cell,&pos);
-  static gdouble theta, thetaold, counter = 0;
-    if (hf->d == 1 ) {
-      if (FTT_CELL_IS_LEAF(cell)) {
-      theta = get_dynamic_contact_angle(cell,hf->f,FTT_OPPOSITE_DIRECTION(hf->d));
-      theta = M_PI-theta;
-      thetaold = theta;
-      }
-      else {
-        theta = thetaold;
-      }
-      if (theta == 0 || theta == M_PI) {
-//        printf("returned theta - 180\n");
-//        theta = contact_angle_bc (cell, hf);
-        theta = M_PI/2.;
-      }
-    }
-    else {
-      theta = M_PI/2.;
-    }
+        /* gdouble theta = contact_angle_bc (cell,hf); // Original Gerris BC lookup */
+
+/*---------------------------------------------------------------------------------------*/
+        /* Withdrawing plate contact angle modifications */
+        FttVector pos;
+        ftt_cell_pos(cell,&pos);
+        static gdouble theta, thetaold;
+        if (hf->d == 1 ) {
+          if (FTT_CELL_IS_LEAF(cell)) {
+            theta = get_dynamic_contact_angle(cell,hf->f,FTT_OPPOSITE_DIRECTION(hf->d));
+            theta = M_PI-theta;
+            thetaold = theta;
+          }
+          else {
+            theta = thetaold;
+          }
+          if (theta == 0 || theta == M_PI) {
+            theta = M_PI/2.;
+          }
+        }
+        else {
+          theta = M_PI/2.;
+        }
 /* 
  if(FTT_CELL_IS_LEAF(cell)) {
     printf("LEAF: height_contact_normal used for hf->d = %d, hf->c = %d, theta(%f,%f) = %f\n",hf->d, hf->c,pos.x,pos.y,theta*180/M_PI);
@@ -3328,23 +3333,24 @@ static void height_contact_normal_bc (FttCell * cell, HFState * hf)
     printf("NOT LEAF: height_contact_normal used for hf->d = %d, hf->c = %d, theta(%f,%f) = %f\n",hf->d, hf->c,pos.x,pos.y,theta*180/M_PI);
   }
 */
-	if ((h == hb && theta < atan (SLOPE_MAX)) || 
-	    (h == ht && theta > M_PI - atan (SLOPE_MAX))) {
+/*---------------------------------------------------------------------------------------*/
 
-	  gdouble orientation = (h == hb ? 1. : -1.);
-	  FttVector m = { orientation*sin(theta), cos(theta), 0. };
-	  gdouble alpha = gfs_plane_alpha (&m, GFS_VALUE (cell, hf->f));
-	  GFS_VALUE (cell, h) = orientation*((alpha - m.x/2.)/m.y - 0.5);
-	  height_propagation_from_boundary (cell, hf, h);
-	  /* set height of neighbouring (non-interfacial) column */
-	  /* the line below ensures that the interface does not enter
-	     the non-interfacial neighbour */
-	  if (orientation*alpha > orientation*m.x) alpha = m.x;
-	  GFS_VALUE (n1, h) = ftt_cell_level (n1) == ftt_cell_level (cell) ? 
-	    orientation*((alpha - m.x*3./2.)/m.y - 0.5) : /* neighbour at same level */
-	    orientation*((alpha - m.x*2.)/m.y - 1.)/2.;   /* coarser neighbor */
-	  height_propagation_from_boundary (n1, hf, h);
-	}
+	      if ((h == hb && theta < atan (SLOPE_MAX)) || (h == ht && theta > M_PI - atan (SLOPE_MAX))) {
+
+	        gdouble orientation = (h == hb ? 1. : -1.);
+	        FttVector m = { orientation*sin(theta), cos(theta), 0. };
+	        gdouble alpha = gfs_plane_alpha (&m, GFS_VALUE (cell, hf->f));
+	        GFS_VALUE (cell, h) = orientation*((alpha - m.x/2.)/m.y - 0.5);
+	        height_propagation_from_boundary (cell, hf, h);
+	        /* set height of neighbouring (non-interfacial) column */
+	        /* the line below ensures that the interface does not enter
+	            the non-interfacial neighbour */
+	        if (orientation*alpha > orientation*m.x) alpha = m.x;
+	        GFS_VALUE (n1, h) = ftt_cell_level (n1) == ftt_cell_level (cell) ? 
+	        orientation*((alpha - m.x*3./2.)/m.y - 0.5) : /* neighbour at same level */
+	        orientation*((alpha - m.x*2.)/m.y - 1.)/2.;   /* coarser neighbor */
+	        height_propagation_from_boundary (n1, hf, h);
+	      }
       }
     }
   }
@@ -3408,20 +3414,23 @@ static void contact_angle_height (FttCell * cell, GfsVariable * h, HFState * hf)
      * The boundary condition is not evaluated in the cell
      * containing the contact line.
      */
+    
+    /* gdouble theta = contact_angle_bc (cell,hf); // Original Gerris BC lookup */
+
+/*---------------------------------------------------------------------------------------*/
+    /* Withdrawing plate contact BCs */
     static gdouble theta, thetaold;
-    static guint counter = 0;
 
     if (hf->d == 1 ) {
       if (FTT_CELL_IS_LEAF(cell)) {
-      theta = get_dynamic_contact_angle(cell,hf->f,FTT_OPPOSITE_DIRECTION(hf->d));
-      theta = M_PI-theta;
-      thetaold = theta;
+        theta = get_dynamic_contact_angle(cell,hf->f,FTT_OPPOSITE_DIRECTION(hf->d));
+        theta = M_PI-theta;
+        thetaold = theta;
       }
       else {
         theta = thetaold;
       }
       if (theta == 0 || theta == M_PI) {
-//        theta = contact_angle_bc (cell, hf);
           theta = M_PI/2.;
       }
     }
@@ -3438,6 +3447,7 @@ static void contact_angle_height (FttCell * cell, GfsVariable * h, HFState * hf)
      printf("NOT LEAF: height_contact_tangential used for hf->d = %d, hf->c = %d, theta(%f,%f) = %f\n",hf->d, hf->c,pos.x,pos.y, theta*180./M_PI);
   }
 */
+/*---------------------------------------------------------------------------------------*/
     if (theta == M_PI/2.)
       GFS_VALUE (neighbor, h) = GFS_VALUE (cell, h);
     else {
@@ -3457,10 +3467,6 @@ static void contact_angle_height (FttCell * cell, GfsVariable * h, HFState * hf)
 			    theta > M_PI - THETA_MIN ? - SLOPE_MAX :
 			    1./tan(theta));
       GFS_VALUE (neighbor, h) = GFS_VALUE (cell, h) + cotantheta;
-//      ftt_cell_pos(cell,&pos);
-//      printf("pos (%f,%f)\n",pos.x,pos.y);
-//      printf("contact_angle_height: theta = %f\n",theta*180/M_PI);
-//      printf("d = %d, (%f,%f) = %f + %f = %f\n",FTT_OPPOSITE_DIRECTION(hf->d),pos.x,pos.y,GFS_VALUE (cell, h),cotantheta,GFS_VALUE (cell, h) + cotantheta);
     }
   }
 }
@@ -3481,6 +3487,9 @@ static void box_periodic_bc (GfsBox * box, HFState * hf)
 				  (FttCellTraverseFunc) height_periodic_bc, hf);
 }
 
+/* Instant angle function no working
+ * Causes segmentation fault
+ */
 static void instant_angle(FttCell * cell, HFState * hf)
 {
   if (is_interfacial (cell, hf->f)) {
@@ -3495,14 +3504,14 @@ static void box_contact_bc (GfsBox * box, HFState * hf)
   for (hf->d = 0; hf->d < FTT_NEIGHBORS; hf->d++)
 //    ftt_cell_traverse_boundary(box->root, hf->d,FTT_POST_ORDER,FTT_TRAVERSE_ALL,-1,instant_angle,hf);
 
-    if (GFS_IS_BOUNDARY (box->neighbor[hf->d]) && 
-	!GFS_IS_BOUNDARY_PERIODIC (box->neighbor[hf->d])) {
+    if (GFS_IS_BOUNDARY (box->neighbor[hf->d]) && !GFS_IS_BOUNDARY_PERIODIC (box->neighbor[hf->d])) {
       hf->angle = gfs_boundary_lookup_bc (GFS_BOUNDARY (box->neighbor[hf->d]), hf->f);
       if (!GFS_IS_BC_ANGLE (hf->angle))
-	hf->angle = NULL; /* symmetry i.e. angle = PI/2 */
-      FttCellTraverseFunc contact_bc = 
-	(FttCellTraverseFunc) (hf->d/2 == hf->c ? 
+	      hf->angle = NULL; /* symmetry i.e. angle = PI/2 */
+
+      FttCellTraverseFunc contact_bc = 	(FttCellTraverseFunc) (hf->d/2 == hf->c ? 
 			       height_contact_normal_bc : height_contact_tangential_bc);
+
       ftt_cell_traverse_boundary (box->root, hf->d, FTT_POST_ORDER, FTT_TRAVERSE_ALL, -1,
 				  contact_bc, hf);
     }

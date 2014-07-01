@@ -458,268 +458,164 @@ GfsBcClass * gfs_bc_angle_class (void)
 
 /** \endobject{GfsBcAngle} */
 
+/*----------------------------------------------------------------------------------------------------------*/
 /**
- * Navier boundary condition.
- * \beginobject{GfsBcNavier}
+ * Joseph boundary condition.
+ * \beginobject{GfsBcJoseph}
  */
 
-static gdouble tangential_velocity_gradient(FttCell * cell, FttDirection d, GfsVariable * v)
+/* compute tangential gradient of varaible @v along the boundary
+ * 2nd order accurate velocity gradient
+ * takes a one sided difference cell on one side doesn't exist
+ */
+
+static gdouble boundary_tangential_gradient(FttCellFace * f, GfsVariable * v)
 {
   gdouble dudt;
-  FttComponent c = d % 2;
+  FttComponent c = f->d % 2;
   FttComponent oc = FTT_ORTHOGONAL_COMPONENT(c);
   FttDirection nd = 2*oc;
-  FttCell * n1 = ftt_cell_neighbor (cell, nd), * n2 = ftt_cell_neighbor (cell, nd + 1);
-  gdouble h = ftt_cell_size(cell);
+  FttCell * nlg = ftt_cell_neighbor (f->cell, nd), * nrg = ftt_cell_neighbor (f->cell, nd + 1);
+  FttCell * nl = ftt_cell_neighbor (f->neighbor,nd), * nr = ftt_cell_neighbor (f->neighbor, nd + 1);
 
-  dudt = (GFS_VALUE(n1,v)-GFS_VALUE(n2,v))/(2.*h);  
+  gdouble h = ftt_cell_size(f->cell);
+  FttVector pos, posl, posr;
+  
+  if (!nlg) { // at corner, no left ghost cell
+    FttCell * nrrg = ftt_cell_neighbor (nrg, nd+1);
+    FttCell * nrr = ftt_cell_neighbor (nr, nd+1);
+    
+    gdouble vb = (GFS_VALUE(f->cell,v)+GFS_VALUE(f->neighbor,v))/2.;
+    gdouble vr = (GFS_VALUE(nrg,v)+GFS_VALUE(nr,v))/2.;
+    gdouble vrr = (GFS_VALUE(nrrg,v)+GFS_VALUE(nrr,v))/2.;
+
+    dudt = (-3.*vb+4.*vr-vrr)/(2.*h);
+  }
+  else if (!nrg) { // at corner, no left ghost cell
+    FttCell * nllg = ftt_cell_neighbor (nlg, nd);
+    FttCell * nll = ftt_cell_neighbor (nl, nd);
+    
+    gdouble vb = (GFS_VALUE(f->cell,v)+GFS_VALUE(f->neighbor,v))/2.;
+    gdouble vl = (GFS_VALUE(nlg,v)+GFS_VALUE(nl,v))/2.;
+    gdouble vll = (GFS_VALUE(nllg,v)+GFS_VALUE(nll,v))/2.;
+
+    dudt = (3.*vb-4.*vl+vll)/(2.*h);
+  }
+  else { // left and right neighbors exist
+    gdouble vl = (GFS_VALUE(nlg,v)+GFS_VALUE(nl,v))/2.;
+    gdouble vr = (GFS_VALUE(nrg,v)+GFS_VALUE(nr,v))/2.;
+    
+    dudt = (vr-vl)/(2.*h);
+  }
 
   return dudt;
 }
 
+static gboolean is_interfacial (FttCell * cell, gpointer data)
+{
+  GfsVariable * f = data;
+  return (GFS_VALUE (cell, f) > 0. && GFS_VALUE (cell, f) < 1.);
+}
 
-static void navier (FttCellFace * f, GfsBc * b)
+/* find_tcp locates the triple contact point at the face defined 
+ * between f->cell and f->neighbor.
+ * vof tracer is defined by the variable b->vofv
+ */
+static FttVector find_tcp(FttCellFace * f, GfsBc *b)
+{
+  g_assert (is_interfacial(f->neighbor,b->vofv));
+
+  guint i;
+  gdouble h = ftt_cell_size(f->cell);
+  FttVector p1, p2, w1, w2, tcp, interfacenorm, pos, posn;
+  GfsVariableTracerVOF * t = GFS_VARIABLE_TRACER_VOF(b->vofv);
+  FttVector q[FTT_DIMENSION*(FTT_DIMENSION - 1) + 1];
+  guint ndim = gfs_vof_facet (f->neighbor, t, q, &interfacenorm);
+  for (i = 0; i < ndim-1; i++ ) {
+    p1.x = q[i].x; p1.y = q[i].y; p1.z = q[i].z;
+    p2.x = q[i + 1].x; p2.y = q[i + 1].y; p2.z = q[i + 1].z;
+  }
+
+  /* Wall end points */
+  ftt_cell_pos(f->cell,&pos);
+  ftt_cell_pos(f->neighbor,&posn);
+  if (f->d/2 == 0) {
+    w1.x = (pos.x+posn.x)/2.; w1.y = pos.y + h/2.;
+    w2.x = (pos.x+posn.x)/2.; w2.y = pos.y - h/2.;
+  }
+  else if (f->d/2 == 1) {
+    w1.y = (pos.y+posn.y)/2.; w1.x = pos.x + h/2.;
+    w2.y = (pos.y+posn.y)/2.; w2.x = pos.x - h/2.;    
+  }
+
+//  printf("cell(%f,%f), h = %f, w1(%f,%f), w2(%f,%f)\n",pos.x,pos.y,h,w1.x,w1.y,w2.x,w2.y);
+
+  tcp.x = ((w1.x*w2.y-w1.y*w2.x)*(p1.x-p2.x)-(w1.x-w2.x)*(p1.x*p2.y-p1.y*p2.x))/
+              ((w1.x-w2.x)*(p1.y-p2.y)-(w1.y-w2.y)*(p1.x-p2.x));
+  tcp.y = ((w1.x*w2.y-w1.y*w2.x)*(p1.y-p2.y)-(w1.y-w2.y)*(p1.x*p2.y-p1.y*p2.x))/
+              ((w1.x-w2.x)*(p1.y-p2.y)-(w1.y-w2.y)*(p1.x-p2.x));
+
+  return tcp;
+}
+
+static void joseph (FttCellFace * f, GfsBc * b)
 { 
 
   gdouble h = ftt_cell_size (f->cell);
-  gdouble lambda = gfs_function_face_value (GFS_BC_NAVIER (b)->lambda, f);
+  gdouble lambda = gfs_function_face_value (GFS_BC_JOSEPH (b)->lambda, f);
  
-  gint dleft, dright;
-  FttCell * leftcell, * leftleftcell, * rightcell, *rightrightcell;
-  FttCell * leftcell_interior, * leftleftcell_interior, * rightcell_interior, * rightrightcell_interior;
-  gdouble vleft, vright, vleftleft, vrightright, vb, v1;
-  gdouble temp_var, xtcp;
   guint i;
-  gdouble dudt;
-  
 
-//  ftt_cell_pos(f->neighbor, &pos);
-//  ftt_face_pos(f, &face_pos);
-  // find center of cell face and wall line 
-  if (f->d == FTT_RIGHT) {
-    dleft = 2; dright = 3;     
-//    w1.x = face_pos.x; w1.y = face_pos.y - h/2.;
-//    w2.x = face_pos.x; w2.y = face_pos.y + h/2.;
-  }
-  else if (f->d == FTT_LEFT) {
-    dleft = 3; dright = 2;     
-//    w1.x = face_pos.x; w1.y = face_pos.y - h/2.;
-//    w2.x = face_pos.x; w2.y = face_pos.y + h/2.;
-  }
-  else if (f->d == FTT_TOP) {
-    dleft = 1; dright = 0;     
-//    w1.x = face_pos.x-h/2.; w2.y = face_pos.y;
-//    w2.x = face_pos.x+h/2.; w2.y = face_pos.y;
-  }
-  else if (f->d == FTT_BOTTOM) {
-    dleft = 0; dright = 1;     
-//    w1.x = face_pos.x-h/2.; w2.y = face_pos.y;
-//    w2.x = face_pos.x+h/2.; w2.y = face_pos.y;
-  }
-//  printf("w1 = (%f,%f) w2 = (%f,%f)\n",w1.x,w1.y,w2.x,w2.y);
+  FttVector pos, tcp;
+  gdouble rc1, rc2, dudn, dudt, tau0, tau1, tau2, tauc = 10000;
+  gdouble Ls0 = lambda, theta, beta;
+  gdouble r01, r02, U, tauavgmod, v1, temp_var;
 
-  leftcell = ftt_cell_neighbor(f->cell, dleft);
-  rightcell = ftt_cell_neighbor(f->cell, dright);
-  vb = (GFS_VALUE(f->cell, b->v)+GFS_VALUE(f->neighbor,b->v))/2.;
-//  dudn = (GFS_VALUE(f->neighbor,b->v)-GFS_VALUE(f->cell, b->v))/h; // dudn found initially using no slip
+  dudt = boundary_tangential_gradient(f, b->v);
+  dudn = (GFS_VALUE(f->neighbor, b->v)-GFS_VALUE(f->cell,b->v))/h;
+  temp_var = dudt*(2.*h);
   v1 = GFS_VALUE(f->neighbor, b->v);
 
-  // Compute velocity along the boundary
-  if (!leftcell) { // if no left neighbor, compute right sided difference
-    rightrightcell = ftt_cell_neighbor(rightcell, dright);
-    rightcell_interior = ftt_cell_neighbor(rightcell,f->d);
-    rightrightcell_interior = ftt_cell_neighbor(rightrightcell,f->d);
-    vright = (GFS_VALUE(rightcell, b->v)+GFS_VALUE(rightcell_interior, b->v))/2.;
-    vrightright = (GFS_VALUE(rightrightcell, b->v)+GFS_VALUE(rightrightcell_interior, b->v))/2.;
-    temp_var = (-3.*vb+4.*vright-vrightright);
-    dudt = temp_var/(2.*h);
-  }
-  else if (!rightcell) { // if no right neighbor, compute left sided difference
-    leftleftcell = ftt_cell_neighbor(leftcell, dleft);
-    leftcell_interior = ftt_cell_neighbor(leftcell, f->d);
-    leftleftcell_interior = ftt_cell_neighbor(leftleftcell, f->d);
-    vleft = (GFS_VALUE(leftcell, b->v)+GFS_VALUE(leftcell_interior, b->v))/2.;
-    vleftleft = (GFS_VALUE(leftleftcell, b->v)+GFS_VALUE(leftleftcell_interior, b->v))/2.;
-    temp_var = 3.*vb-4.*vleft+vleftleft;
-    dudt = temp_var/(2.*h);
-  }
-  else {
-    leftcell_interior = ftt_cell_neighbor(leftcell, f->d);
-    rightcell_interior = ftt_cell_neighbor(rightcell,f->d);
-    vleft = (GFS_VALUE(leftcell, b->v)+GFS_VALUE(leftcell_interior, b->v))/2.;
-    vright = (GFS_VALUE(rightcell, b->v)+GFS_VALUE(rightcell_interior, b->v))/2.;
-    temp_var = vright-vleft;
-    dudt = temp_var/(2.*h);
-  }
 
-
-/*    tau0 = fabs(dudt)+fabs(dudn);
-    theta = -M_PI; rc_top = -1.; rc_bottom = -1; dr_top = -1; dr_bottom = -1;
-
-  if(b->vofv && GFS_VALUE(f->neighbor,b->vofv) < 1. && GFS_VALUE(f->neighbor,b->vofv) > 0. ) {
-    GfsVariableTracerVOF * t = GFS_VARIABLE_TRACER_VOF(b->vofv);
-    FttVector q[FTT_DIMENSION*(FTT_DIMENSION - 1) + 1];
-    guint ndim = gfs_vof_facet (f->neighbor, t, q, &interfacenorm);
-    for (i = 0; i < ndim-1; i++ ) {
-      p1.x = q[i].x; p1.y = q[i].y; p1.z = q[i].z;
-      p2.x = q[i + 1].x; p2.y = q[i + 1].y; p2.z = q[i + 1].z;
-    }
-//      printf("Vof facet (%f,%f)(%f,%f)\n",p1.x,p1.y,p2.x,p2.y);
-    tcp.x = ((w1.x*w2.y-w1.y*w2.x)*(p1.x-p2.x)-(w1.x-w2.x)*(p1.x*p2.y-p1.y*p2.x))/
-            ((w1.x-w2.x)*(p1.y-p2.y)-(w1.y-w2.y)*(p1.x-p2.x));
-    tcp.y = ((w1.x*w2.y-w1.y*w2.x)*(p1.y-p2.y)-(w1.y-w2.y)*(p1.x*p2.y-p1.y*p2.x))/
-            ((w1.x-w2.x)*(p1.y-p2.y)-(w1.y-w2.y)*(p1.x-p2.x));
-
-//    gdouble pmag = pow(pow(p2.x-p1.x,2)+pow(p2.y-p1.y,2),0.5);
-
-    alpha = atan2(p2.y-p1.y,p2.x-p1.x);
-    
-    if (alpha < 0) { alpha = alpha+M_PI; }
-    if (tcp.x > pos.x+h/2. || tcp.x < pos.x-h/2. || tcp.y > pos.y+h/2. || tcp.y < pos.y-h/2.) {
-//      printf("TCP outside of cell (%f,%f)\n",tcp.x,tcp.y);
-    }
-    else {
-      // determine contact angle. theta is the contact angle on the top and right side of the interface in global coordinates
-      if (f->d == FTT_RIGHT) {
-        if (alpha > M_PI/2.) { theta = 3.*M_PI/2.-alpha; }
-        else if (alpha < M_PI/2.) { theta = M_PI/2.-alpha; }
-        beta = M_PI-theta;
-        rc_top = (v0*2*sin(theta)*sin(theta))/(theta-sin(theta)*cos(theta))/tauc;
-        rc_bottom = (v0*2*sin(beta)*sin(theta))/(beta-sin(beta)*cos(beta))/tauc;
-        dr_top = fabs(w2.y-tcp.y);
-        dr_bottom = fabs(w1.y-tcp.y);
-      }
-      else if (f->d == FTT_LEFT) {
-        if (alpha > M_PI/2.) { theta = alpha-M_PI/2.; }
-        else if (alpha < M_PI/2.) { theta = alpha+M_PI/2.; }
-        beta = M_PI-theta;
-        rc_top = (v0*2*sin(theta)*sin(theta))/(theta-sin(theta)*cos(theta))/tauc;
-        rc_bottom = (v0*2*sin(beta)*sin(theta))/(beta-sin(beta)*cos(beta))/tauc;
-        dr_top = fabs(w2.y-tcp.y);
-        dr_bottom = fabs(w1.y-tcp.y);
-      }
-      else if (f->d == FTT_TOP) {
-        theta = alpha;
-        beta = M_PI-theta;
-        rc_top = (v0*2*sin(theta)*sin(theta))/(theta-sin(theta)*cos(theta))/tauc;
-        rc_bottom = (v0*2*sin(beta)*sin(theta))/(beta-sin(beta)*cos(beta))/tauc;
-        dr_top = fabs(w2.x-tcp.x);
-        dr_bottom = fabs(w1.x-tcp.x);
-      }
-      else if (f->d == FTT_BOTTOM) {
-        theta = M_PI-alpha;
-        beta = M_PI-theta;
-        rc_top = (v0*2*sin(theta)*sin(theta))/(theta-sin(theta)*cos(theta))/tauc;
-        rc_bottom = (v0*2*sin(beta)*sin(theta))/(beta-sin(beta)*cos(beta))/tauc;
-        dr_top = fabs(w2.x-tcp.x);
-        dr_bottom = fabs(w1.x-tcp.x);
-      }
-      
-      tau_top = tau0*(dr_top-rc_top)+rc_top*tauc*(1+log(dr_top/rc_top));
-      tau_bottom = tau0*(dr_bottom-rc_bottom)+rc_bottom*tauc*(1+log(dr_bottom/rc_bottom));
-    
-      lambda = Ls0/pow(1-log((tau_top+tau_bottom)/tauc),0.5);  
-//  printf("cell position (%f,%f)\n",pos.x,pos.y);
-//  printf("theta = %f for P = (%f,%f)\n",theta*180./M_PI,p2.x-p1.x,p2.y-p1.y);
-//  printf("rc_top = %f and rc_bottom = %f\n",rc_top,rc_bottom);
-//  printf("dr_top = %f and dr_bottom = %f and h = %f\n",dr_top,dr_bottom,h);
-//  printf("tau_top + tau_bottom = %f + %f = %f\n",tau_top,tau_bottom,tau_top+tau_bottom);
-    }
-    
-  }
-*/
-
-  FttVector pos, p1, p2, interfacenorm, tcp;
-  gdouble rc1, rc2, dudn,tau0, tau1, tau2, tauc = 10000, r = h/2., alpha;
-  gdouble Ls0 = lambda, theta, beta;
-  gdouble testvar;
-  gdouble r01, r02, U, tauavgmod;
-
-  
-  ftt_cell_pos(f->neighbor,&pos);
-  if(b->vofv && GFS_VALUE(f->neighbor,b->vofv) < 1. && GFS_VALUE(f->neighbor,b->vofv) > 0. ) {
+  if(b->vofv && is_interfacial(f->neighbor,b->vofv) ) {
     U = fabs(GFS_VALUE(f->neighbor,b->v)-gfs_function_face_value (GFS_BC_VALUE (b)->val, f));
-    printf("cell contains interface position (%f,%f), V = %f\n",pos.x,pos.y,U);
-    GfsVariableTracerVOF * t = GFS_VARIABLE_TRACER_VOF(b->vofv);
-    FttVector q[FTT_DIMENSION*(FTT_DIMENSION - 1) + 1];
-    guint ndim = gfs_vof_facet (f->neighbor, t, q, &interfacenorm);
-    for (i = 0; i < ndim-1; i++ ) {
-      p1.x = q[i].x; p1.y = q[i].y; p1.z = q[i].z;
-      p2.x = q[i + 1].x; p2.y = q[i + 1].y; p2.z = q[i + 1].z;
+//    printf("cell contains interface position (%f,%f), V = %f\n",pos.x,pos.y,U);
+    tcp = find_tcp(f,b);
+    ftt_cell_pos(f->neighbor,&pos);
+    if (tcp.x > pos.x + h/2. || tcp.x < pos.x - h/2. || tcp.y > pos.y + h/2. || tcp.y < pos.y - h/2.) {
+      printf("TCP outside of cell(%f,%f)\n",pos.x,pos.y);
     }
-    dudn = (GFS_VALUE(f->neighbor, b->v)-GFS_VALUE(f->cell,b->v))/h;
-//    printf("(v1-vg)/h = (%f - %f)/%f = %f\n",GFS_VALUE(f->neighbor, b->v),GFS_VALUE(f->cell,b->v),h,dudn);
-    if ( p1.x == pos.x-h/2. && p1.y < pos.y+h/2. && p1.y > pos.y-h/2.) { 
-      tcp.x = p1.x; tcp.y = p1.y;
-      theta = get_dynamic_contact_angle(f->neighbor,b->vofv,0);
-      beta = M_PI-theta;
-      printf("theta = %f, beta = %f\n",theta*180./M_PI,beta*180./M_PI);
-
-//      tau0 = fabs(dudn); /* Simulation stress for Navier BC */
-      tau0 = fabs(dudn)+fabs(dudt); /* Simulation stress for Joseph's BC */
-      r01 = (2*sin(theta)*sin(theta))/(theta-sin(theta)*cos(theta))*U/tau0;
-      r02 = (2*sin(beta)*sin(beta))/(beta-sin(beta)*cos(beta))*U/tau0;
-      rc1 = U/tauc*(2*sin(theta)*sin(theta))/(theta-sin(theta)*cos(theta));
-      rc2 = U/tauc*(2*sin(beta)*sin(beta))/(beta-sin(beta)*cos(beta));
-      printf("tau0 = %f, r01 = %f, r02 = %f, rc1 = %f, rc2 = %f\n",tau0,r01,r02,rc1,rc2);
-
-      tau1 = tauc*rc1*(1+log(r01/rc1));
-      tau2 = tauc*rc2*(1+log(r02/rc2));
-      tauavgmod = (tau1+tau2)/(r01+r02);
-      printf("tauavgmod = %f\n",tauavgmod);
-      if ((tauavgmod)/tauc > 1 || (tauavgmod) < 0) { 
-        printf("ERROR: tau_avg > tauc %f > %f\n",(tauavgmod),tauc);
-        lambda = Ls0/pow(1-0.9999,0.5);
-        printf("modified LS/Ls0 = %f\n",lambda/Ls0);
-      }
-      else {
-        lambda = Ls0/pow(1-(tauavgmod)/tauc,0.5);
-        printf("Modified Ls/Ls0) = %f\n",lambda/Ls0);
-      }
-    }
-    else if ( p2.x == pos.x-h/2. && p2.y < pos.y+h/2. && p2.y > pos.y-h/2.) { 
-      tcp.x = p2.x; tcp.y = p2.y;
-      theta = get_dynamic_contact_angle(f->neighbor,b->vofv,0);
-      beta = M_PI-theta;
-      printf("theta = %f, beta = %f\n",theta*180./M_PI,beta*180./M_PI);
-
-//      tau0 = fabs(dudn); /* Simulation stress for Navier BC */
-      tau0 = fabs(dudn)+fabs(dudt); /* Simulation stress for Joseph's BC */
-      r01 = (2*sin(theta)*sin(theta))/(theta-sin(theta)*cos(theta))*U/tau0;
-      r02 = (2*sin(beta)*sin(beta))/(beta-sin(beta)*cos(beta))*U/tau0;
-      rc1 = U/tauc*(2*sin(theta)*sin(theta))/(theta-sin(theta)*cos(theta));
-      rc2 = U/tauc*(2*sin(beta)*sin(beta))/(beta-sin(beta)*cos(beta));
-      printf("tau0 = %f, r01 = %f, r02 = %f, rc1 = %f, rc2 = %f\n",tau0,r01,r02,rc1,rc2);
-
-      tau1 = tauc*rc1*(1+log(r01/rc1));
-      tau2 = tauc*rc2*(1+log(r02/rc2));
-      tauavgmod = (tau1+tau2)/(r01+r02);
-      printf("tauavgmod = %f\n",tauavgmod);
-      if ((tauavgmod)/tauc > 1 || (tauavgmod) < 0) { 
-        printf("ERROR: tau_avg > tauc %f > %f\n",(tauavgmod),tauc);
-        lambda = Ls0/pow(1-0.9999,0.5);
-        printf("modified LS/Ls0 = %f\n",lambda/Ls0);
-      }
-      else {
-        lambda = Ls0/pow(1-(tauavgmod)/tauc,0.5);
-        printf("Modified Ls/Ls0) = %f\n",lambda/Ls0);
-      }
-    }
-    
     else {
-      printf("TCP is outside of cell. Ls/ls0 = %f\n", lambda/Ls0);
+
+      theta = get_dynamic_contact_angle(f->neighbor,b->vofv,0);
+      beta = M_PI-theta;
+//    tau0 = fabs(dudn); // Simulation stress for Navier BC 
+      tau0 = fabs(dudn)+fabs(dudt); // Simulation stress for Joseph's BC 
+      r01 = (2*sin(theta)*sin(theta))/(theta-sin(theta)*cos(theta))*U/tau0;
+      r02 = (2*sin(beta)*sin(beta))/(beta-sin(beta)*cos(beta))*U/tau0;
+      rc1 = U/tauc*(2*sin(theta)*sin(theta))/(theta-sin(theta)*cos(theta));
+      rc2 = U/tauc*(2*sin(beta)*sin(beta))/(beta-sin(beta)*cos(beta));
+
+      tau1 = tauc*rc1*(1+log(r01/rc1));
+      tau2 = tauc*rc2*(1+log(r02/rc2));
+      tauavgmod = (tau1+tau2)/(r01+r02);
+
+      if ((tauavgmod)/tauc > 1 || (tauavgmod) < 0) { 
+        lambda = Ls0/pow(1-0.9999,0.5);
+        printf("ERROR: (%f,%f) tau_avg > tauc %f > %f, modified LS/Ls0 = %f\n",
+                pos.x,pos.y,tauavgmod,tauc,lambda/Ls0);
+      }
+      else {
+        lambda = Ls0/pow(1-(tauavgmod)/tauc,0.5);
+        printf("(%f,%f) Modified Ls/Ls0 = %f\n",pos.x,pos.y,lambda/Ls0);
+      }
     }
     
   }
 
-///////////// Navier Boundary condition ///////////////////////
-/*
-  GFS_VALUE (f->cell, b->v) = 
-    (2.*gfs_function_face_value (GFS_BC_VALUE (b)->val, f)*h
-     - (h - 2.*lambda)*GFS_VALUE (f->neighbor, b->v))/(h + 2.*lambda); 
-*/
 ////////////// Joseph's Boundary condition ///////////////////////
 // Prescribe ghost cell value  
+
   GFS_VALUE (f->cell, b->v) =
     (2.*gfs_function_face_value (GFS_BC_VALUE (b)->val, f)*h
     - v1*(h-2.*lambda)+lambda*temp_var)/(h+2.*lambda);
@@ -728,8 +624,89 @@ static void navier (FttCellFace * f, GfsBc * b)
 
 }
 
+static void face_joseph (FttCellFace * f, GfsBc * b)
+{
+  gdouble h = ftt_cell_size (f->cell);
+  gdouble lambda = gfs_function_face_value (GFS_BC_JOSEPH (b)->lambda, f);
+  GFS_STATE (f->cell)->f[f->d].v = GFS_STATE (f->neighbor)->f[FTT_OPPOSITE_DIRECTION (f->d)].v = 
+    (gfs_function_face_value (GFS_BC_VALUE (b)->val, f)*h + 
+     2.*lambda*GFS_VALUE (f->neighbor, b->v))/(h + 2.*lambda);
+}
+
+static void bc_joseph_read (GtsObject ** o, GtsFile * fp)
+{
+  if (GTS_OBJECT_CLASS (gfs_bc_joseph_class ())->parent_class->read)
+    (* GTS_OBJECT_CLASS (gfs_bc_joseph_class ())->parent_class->read) (o, fp);
+  if (fp->type == GTS_ERROR)
+    return;
+  GfsBcJoseph * bc = GFS_BC_JOSEPH (*o);
+  if (bc->lambda == NULL)
+    bc->lambda = gfs_function_new (gfs_function_class (), 0.);
+  gfs_function_set_units (bc->lambda, 1.);
+  gfs_function_read (bc->lambda, gfs_box_domain (GFS_BC (bc)->b->box), fp);
+}
+
+static void bc_joseph_write (GtsObject * o, FILE * fp)
+{  
+  (* GTS_OBJECT_CLASS (gfs_bc_joseph_class ())->parent_class->write) (o, fp);
+  if (GFS_BC_JOSEPH (o)->lambda)
+    gfs_function_write (GFS_BC_JOSEPH (o)->lambda, fp);
+}
+
+static void gfs_bc_joseph_init (GfsBc * object)
+{
+  object->bc =                     (FttFaceTraverseFunc) joseph;
+  object->homogeneous_bc =         (FttFaceTraverseFunc) homogeneous_dirichlet;
+  object->face_bc =                (FttFaceTraverseFunc) face_joseph;
+}
+
+static void gfs_bc_joseph_class_init (GtsObjectClass * klass)
+{
+  klass->read = bc_joseph_read;
+  klass->write = bc_joseph_write;
+}
+
+GfsBcClass * gfs_bc_joseph_class (void)
+{
+  static GfsBcClass * klass = NULL;
+
+  if (klass == NULL) {
+    GtsObjectClassInfo gfs_bc_joseph_info = {
+      "GfsBcJoseph",
+      sizeof (GfsBcJoseph),
+      sizeof (GfsBcClass),
+      (GtsObjectClassInitFunc) gfs_bc_joseph_class_init,
+      (GtsObjectInitFunc) gfs_bc_joseph_init,
+      (GtsArgSetFunc) NULL,
+      (GtsArgGetFunc) NULL
+    };
+    klass = gts_object_class_new (GTS_OBJECT_CLASS (gfs_bc_value_class ()),
+				  &gfs_bc_joseph_info);
+  }
+
+  return klass;
+}
+
+/** \endobject{GfsBcJoseph} */
+
+/*----------------------------------------------------------------------------------------------------------*/
+/**
+ * Navier boundary condition
+ * \beginobject{GfsBcNavier}
+ */
+
+static void navier (FttCellFace * f, GfsBc * b)
+{
+  gdouble h = ftt_cell_size (f->cell);
+  gdouble lambda = gfs_function_face_value (GFS_BC_NAVIER (b)->lambda, f);
+  GFS_VALUE (f->cell, b->v) = 
+    (2.*gfs_function_face_value (GFS_BC_VALUE (b)->val, f)*h
+     - (h - 2.*lambda)*GFS_VALUE (f->neighbor, b->v))/(h + 2.*lambda);
+}
+
 static void face_navier (FttCellFace * f, GfsBc * b)
 {
+  printf("face_navier called \n");
   gdouble h = ftt_cell_size (f->cell);
   gdouble lambda = gfs_function_face_value (GFS_BC_NAVIER (b)->lambda, f);
   GFS_STATE (f->cell)->f[f->d].v = GFS_STATE (f->neighbor)->f[FTT_OPPOSITE_DIRECTION (f->d)].v = 
@@ -785,13 +762,16 @@ GfsBcClass * gfs_bc_navier_class (void)
       (GtsArgGetFunc) NULL
     };
     klass = gts_object_class_new (GTS_OBJECT_CLASS (gfs_bc_value_class ()),
-				  &gfs_bc_navier_info);
+          &gfs_bc_navier_info);
   }
 
   return klass;
 }
 
-/** \endobject{GfsBcNavier} */
+/** \endpbject{GfsBcNavier} */
+/*----------------------------------------------------------------------------------------------------------*/
+
+
 
 /**
  * One of the boundaries of a #GfsBox.

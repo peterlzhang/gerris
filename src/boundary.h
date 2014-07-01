@@ -135,6 +135,27 @@ struct _GfsBcNavier {
 
 GfsBcClass * gfs_bc_navier_class  (void);
 
+/* GfsBcJoseph: Header */
+
+typedef struct _GfsBcJoseph         GfsBcJoseph;
+
+struct _GfsBcJoseph {
+  /*< private >*/
+  GfsBcValue parent;
+
+  /*< public >*/
+  GfsFunction * lambda;
+};
+
+#define GFS_BC_JOSEPH(obj)            GTS_OBJECT_CAST (obj,\
+					         GfsBcJoseph,\
+					         gfs_bc_joseph_class ())
+#define GFS_IS_BC_JOSEPH(obj)         (gts_object_is_from_class (obj,\
+						 gfs_bc_joseph_class ()))
+
+GfsBcClass * gfs_bc_joseph_class  (void);
+
+
 /* GfsBoundary: Header */
 
 typedef enum {
