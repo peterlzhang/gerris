@@ -144,7 +144,7 @@ struct _GfsBcJoseph {
   GfsBcValue parent;
 
   /*< public >*/
-  GfsFunction * lambda;
+  GfsFunction * lambda, * tauc;
 };
 
 #define GFS_BC_JOSEPH(obj)            GTS_OBJECT_CAST (obj,\

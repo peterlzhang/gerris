@@ -558,16 +558,31 @@ static FttVector find_tcp(FttCellFace * f, GfsBc *b)
   return tcp;
 }
 
+/*
+static gdouble modified_slip_length()
+{
+
+}
+*/
+
 static void joseph (FttCellFace * f, GfsBc * b)
 { 
 
   gdouble h = ftt_cell_size (f->cell);
   gdouble lambda = gfs_function_face_value (GFS_BC_JOSEPH (b)->lambda, f);
- 
+  gdouble tauc = gfs_function_face_value (GFS_BC_JOSEPH (b)->tauc,f);
+
+
+  FttComponent c = f->d % 2;
+  FttComponent oc = FTT_ORTHOGONAL_COMPONENT(c);
+  FttDirection nd = 2*oc;
+  FttCell * nlg = ftt_cell_neighbor (f->cell, nd), * nrg = ftt_cell_neighbor (f->cell, nd + 1);
+  FttCell * nl = ftt_cell_neighbor (f->neighbor,nd), * nr = ftt_cell_neighbor (f->neighbor, nd + 1);
+  
   guint i;
 
   FttVector pos, tcp;
-  gdouble rc1, rc2, dudn, dudt, tau0, tau1, tau2, tauc = 10000;
+  gdouble rc1, rc2, dudn, dudt, tau0, tau1, tau2;
   gdouble Ls0 = lambda, theta, beta;
   gdouble r01, r02, U, tauavgmod, v1, temp_var;
 
@@ -576,7 +591,7 @@ static void joseph (FttCellFace * f, GfsBc * b)
   temp_var = dudt*(2.*h);
   v1 = GFS_VALUE(f->neighbor, b->v);
 
-
+  // determine modified slip length
   if(b->vofv && is_interfacial(f->neighbor,b->vofv) ) {
     U = fabs(GFS_VALUE(f->neighbor,b->v)-gfs_function_face_value (GFS_BC_VALUE (b)->val, f));
 //    printf("cell contains interface position (%f,%f), V = %f\n",pos.x,pos.y,U);
@@ -613,14 +628,43 @@ static void joseph (FttCellFace * f, GfsBc * b)
     
   }
 
-////////////// Joseph's Boundary condition ///////////////////////
-// Prescribe ghost cell value  
+  if (!nlg) { // at corner, no left ghost cell
+    FttCell * nrrg = ftt_cell_neighbor (nrg, nd+1);
+    FttCell * nrr = ftt_cell_neighbor (nr, nd+1);
+    
+    gdouble vb = (GFS_VALUE(f->cell,b->v)+GFS_VALUE(f->neighbor,b->v))/2.;
+    gdouble vr = (GFS_VALUE(nrg,b->v)+GFS_VALUE(nr,b->v))/2.;
+    gdouble vrr = (GFS_VALUE(nrrg,b->v)+GFS_VALUE(nrr,b->v))/2.;
 
-  GFS_VALUE (f->cell, b->v) =
-    (2.*gfs_function_face_value (GFS_BC_VALUE (b)->val, f)*h
-    - v1*(h-2.*lambda)+lambda*temp_var)/(h+2.*lambda);
+    // set ghost cell value 
+    GFS_VALUE(f->cell,b->v) =
+      (2.*h*(2.*gfs_function_face_value (GFS_BC_VALUE (b)->val, f)-GFS_VALUE(f->neighbor,b->v))+
+      lambda*(GFS_VALUE(f->neighbor,b->v)+8.*vr-2.*vrr))/(2.*h+7.*lambda);
+  }
+  else if (!nrg) { // at corner, no right ghost cell
+    FttCell * nllg = ftt_cell_neighbor (nlg, nd);
+    FttCell * nll = ftt_cell_neighbor (nl, nd);
+    
+    gdouble vb = (GFS_VALUE(f->cell,b->v)+GFS_VALUE(f->neighbor,b->v))/2.;
+    gdouble vl = (GFS_VALUE(nlg,b->v)+GFS_VALUE(nl,b->v))/2.;
+    gdouble vll = (GFS_VALUE(nllg,b->v)+GFS_VALUE(nll,b->v))/2.;
+    
+    // set ghost cell value 
+    GFS_VALUE(f->cell,b->v) = 
+      (2.*h*(2.*gfs_function_face_value (GFS_BC_VALUE (b)->val, f)-GFS_VALUE(f->neighbor,b->v))+
+      lambda*(7.*GFS_VALUE(f->neighbor,b->v)-8.*vl+2.*vll))/(2.*h+lambda);
 
-//  printf("JBC USED!!!!!!\n");
+  }
+  else { // left and right neighbors exist
+    gdouble vl = (GFS_VALUE(nlg,b->v)+GFS_VALUE(nl,b->v))/2.;
+    gdouble vr = (GFS_VALUE(nrg,b->v)+GFS_VALUE(nr,b->v))/2.;
+
+    // set ghost cell value 
+    GFS_VALUE(f->cell,b->v) = 
+      (2.*gfs_function_face_value (GFS_BC_VALUE (b)->val, f)*h+
+      GFS_VALUE(f->neighbor,b->v)*(2.*lambda-h)+lambda*(vr-vl))/
+      (h+2.*lambda);    
+  }
 
 }
 
@@ -628,9 +672,44 @@ static void face_joseph (FttCellFace * f, GfsBc * b)
 {
   gdouble h = ftt_cell_size (f->cell);
   gdouble lambda = gfs_function_face_value (GFS_BC_JOSEPH (b)->lambda, f);
+  FttComponent c = f->d % 2;
+  FttComponent oc = FTT_ORTHOGONAL_COMPONENT(c);
+  FttDirection nd = 2*oc;
+  FttCell * nlg = ftt_cell_neighbor (f->cell, nd), * nrg = ftt_cell_neighbor (f->cell, nd + 1);
+  FttCell * nl = ftt_cell_neighbor (f->neighbor,nd), * nr = ftt_cell_neighbor (f->neighbor, nd + 1);
+  
+  gdouble v1 = GFS_VALUE(f->neighbor,b->v);
+  gdouble v0 = gfs_function_face_value (GFS_BC_VALUE (b)->val, f);
+
+  if (!nlg) { // at corner, no left ghost cell
+    FttCell * nrrg = ftt_cell_neighbor (nrg, nd+1);
+    FttCell * nrr = ftt_cell_neighbor (nr, nd+1);
+    
+    gdouble vb = (GFS_VALUE(f->cell,b->v)+GFS_VALUE(f->neighbor,b->v))/2.;
+    gdouble vr = (GFS_VALUE(nrg,b->v)+GFS_VALUE(nr,b->v))/2.;
+    gdouble vrr = (GFS_VALUE(nrrg,b->v)+GFS_VALUE(nrr,b->v))/2.;
+
+    GFS_STATE (f->cell)->f[f->d].v = GFS_STATE (f->neighbor)->f[FTT_OPPOSITE_DIRECTION (f->d)].v = 
+      (2.*h*(2.*v0-v1)+lambda*(9.*v1+16.*vr-4.*vrr))/(2.*(2.*h+7.*lambda));
+  }
+  else if (!nrg) { // at corner, no right ghost cell
+    FttCell * nllg = ftt_cell_neighbor (nlg, nd);
+    FttCell * nll = ftt_cell_neighbor (nl, nd);
+    
+    gdouble vb = (GFS_VALUE(f->cell,b->v)+GFS_VALUE(f->neighbor,b->v))/2.;
+    gdouble vl = (GFS_VALUE(nlg,b->v)+GFS_VALUE(nl,b->v))/2.;
+    gdouble vll = (GFS_VALUE(nllg,b->v)+GFS_VALUE(nll,b->v))/2.;
+    
+    GFS_STATE (f->cell)->f[f->d].v = GFS_STATE (f->neighbor)->f[FTT_OPPOSITE_DIRECTION (f->d)].v = 
+      (2.*h*(4.*v0-v1)+lambda*(15.*v1-16.*vl+4.*vll))/(2.*(2.*h+lambda));
+  }
+  else { // left and right neighbors exist
+    gdouble vl = (GFS_VALUE(nlg,b->v)+GFS_VALUE(nl,b->v))/2.;
+    gdouble vr = (GFS_VALUE(nrg,b->v)+GFS_VALUE(nr,b->v))/2.;
+
   GFS_STATE (f->cell)->f[f->d].v = GFS_STATE (f->neighbor)->f[FTT_OPPOSITE_DIRECTION (f->d)].v = 
-    (gfs_function_face_value (GFS_BC_VALUE (b)->val, f)*h + 
-     2.*lambda*GFS_VALUE (f->neighbor, b->v))/(h + 2.*lambda);
+    (4.*lambda*v1+2.*v0*h+lambda*(vr-vl))/(2.*h+4.*lambda);
+  }
 }
 
 static void bc_joseph_read (GtsObject ** o, GtsFile * fp)
@@ -644,6 +723,10 @@ static void bc_joseph_read (GtsObject ** o, GtsFile * fp)
     bc->lambda = gfs_function_new (gfs_function_class (), 0.);
   gfs_function_set_units (bc->lambda, 1.);
   gfs_function_read (bc->lambda, gfs_box_domain (GFS_BC (bc)->b->box), fp);
+  if (bc->tauc == NULL)
+    bc->tauc = gfs_function_new (gfs_function_class (), 10000.);
+  gfs_function_set_units (bc->tauc, 1.);
+  gfs_function_read (bc->tauc, gfs_box_domain (GFS_BC (bc)->b->box), fp);
 }
 
 static void bc_joseph_write (GtsObject * o, FILE * fp)
@@ -651,6 +734,8 @@ static void bc_joseph_write (GtsObject * o, FILE * fp)
   (* GTS_OBJECT_CLASS (gfs_bc_joseph_class ())->parent_class->write) (o, fp);
   if (GFS_BC_JOSEPH (o)->lambda)
     gfs_function_write (GFS_BC_JOSEPH (o)->lambda, fp);
+  if (GFS_BC_JOSEPH (o)->tauc)
+    gfs_function_write (GFS_BC_JOSEPH (o)->tauc, fp);
 }
 
 static void gfs_bc_joseph_init (GfsBc * object)
