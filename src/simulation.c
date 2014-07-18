@@ -428,6 +428,17 @@ void gfs_advance_tracers (GfsSimulation * sim, gdouble dt)
   }  
 }
 
+typedef struct {
+  GfsVariable * vofv, * v;
+  FttVector * pos;
+} print_value_data;
+
+static void print_values(FttCell * cell, FttVector * pos)
+{
+  ftt_cell_pos(cell,pos);
+  printf("Cell at (%f,%f) \n",pos->x,pos->y);
+}
+
 static void simulation_run (GfsSimulation * sim)
 {
   GfsVariable * p, * pmac, * res = NULL, * g[FTT_DIMENSION], * gmac[FTT_DIMENSION];
@@ -474,8 +485,7 @@ static void simulation_run (GfsSimulation * sim)
   else if (sim->advection_params.gc)
     gfs_update_gradients (domain, p, sim->physical_params.alpha, g);
 //////////////////// START OF TIME STEPPING LOOP ///////////////////////////////////
-  while (sim->time.t < sim->time.end &&
-	 sim->time.i < sim->time.iend) { 
+  while (sim->time.t < sim->time.end && sim->time.i < sim->time.iend) { 
     gdouble tstart = gfs_clock_elapsed (domain->timer);
 
     gts_container_foreach (GTS_CONTAINER (sim->events), (GtsFunc) gfs_event_do, sim);
@@ -493,16 +503,16 @@ static void simulation_run (GfsSimulation * sim)
     else
       gfs_predicted_face_velocities (domain, FTT_DIMENSION, &sim->advection_params);
       
-    gfs_variables_swap (p, pmac);
-    gfs_mac_projection (domain,
+      gfs_variables_swap (p, pmac);
+      gfs_mac_projection (domain,
     			&sim->projection_params, 
     			sim->advection_params.dt/2.,
-			p, sim->physical_params.alpha, gmac, NULL);
-    gfs_variables_swap (p, pmac);
+			    p, sim->physical_params.alpha, gmac, NULL);
+      gfs_variables_swap (p, pmac);
 
-    gts_container_foreach (GTS_CONTAINER (sim->events), (GtsFunc) gfs_event_half_do, sim);
-
-    gfs_centered_velocity_advection_diffusion (domain,
+      gts_container_foreach (GTS_CONTAINER (sim->events), (GtsFunc) gfs_event_half_do, sim);
+      // Advection and diffusion of velocity
+      gfs_centered_velocity_advection_diffusion (domain,
 					       FTT_DIMENSION,
 					       &sim->advection_params,
 					       gmac,
@@ -540,6 +550,24 @@ static void simulation_run (GfsSimulation * sim)
     gts_range_add_value (&domain->size, gfs_domain_size (domain, FTT_TRAVERSE_LEAFS, -1));
     gts_range_update (&domain->size);
   } ///////////////// END OF TIME STEPPING LOOP ///////////////////////////////////
+//------------------------------------------------------------------------------------
+  printf("Done with time loop\n");
+  FttVector pos;
+/*  print_value_data pzdat;
+  i = domain->variables;
+  while (i) {
+    GfsVariable * tempvar = i->data;
+    if (GFS_IS_VARIABLE_TRACER_VOF_HEIGHT (tempvar))
+      pzdat.vofv = tempvar;
+    if (strcmp(tempvar->name,"V")==0)
+      pzdat.v = tempvar;
+    i = i->next;
+  }
+  printf("pzdat: %s,%s\n",pzdat.vofv->name,pzdat.v->name);
+*/
+  gfs_domain_cell_traverse_boundary(domain,1,FTT_PRE_ORDER,FTT_TRAVERSE_LEAFS,-1,
+    (FttCellTraverseFunc) print_values,&pos);
+//------------------------------------------------------------------------------------
   gts_container_foreach (GTS_CONTAINER (sim->events), (GtsFunc) gfs_event_do, sim);  
   gts_container_foreach (GTS_CONTAINER (sim->events), (GtsFunc) gts_object_destroy, NULL);
 
@@ -1471,8 +1499,8 @@ static gdouble min_cfl (GfsSimulation * sim)
     GfsVariable * v = i->data;
 
     if (GFS_IS_VARIABLE_TRACER (v) && 
-	GFS_VARIABLE_TRACER (v)->advection.scheme != GFS_NONE &&
-	GFS_VARIABLE_TRACER (v)->advection.cfl < cfl)
+       	GFS_VARIABLE_TRACER (v)->advection.scheme != GFS_NONE &&
+	      GFS_VARIABLE_TRACER (v)->advection.cfl < cfl)
       cfl = GFS_VARIABLE_TRACER (v)->advection.cfl;
     i = i->next;
   }
@@ -1499,33 +1527,33 @@ void gfs_simulation_set_timestep (GfsSimulation * sim)
   g_return_if_fail (sim != NULL);
 
   t = sim->time.t;
-  if ((cfl = min_cfl (sim)) < G_MAXDOUBLE)
+  if ((cfl = min_cfl (sim)) < G_MAXDOUBLE) // if any cfl number less than G_MAXDOUBLE, set dt = cfl*cfl
     sim->advection_params.dt = cfl*(* GFS_SIMULATION_CLASS (GTS_OBJECT (sim)->klass)->cfl) (sim);
   else
-    sim->advection_params.dt = G_MAXINT;
-  if (sim->advection_params.dt > sim->time.dtmax)
+    sim->advection_params.dt = G_MAXINT; // else set dt = G_MAXINT
+  if (sim->advection_params.dt > sim->time.dtmax) // if time step larger than user define max, set to dtmax
     sim->advection_params.dt = sim->time.dtmax;
 
-  GSList *  i = GFS_DOMAIN (sim)->variables;
+  GSList *  i = GFS_DOMAIN (sim)->variables; // go through list of variables
   while (i) {
     GfsVariable * v = i->data;
-    if (v->sources) {
+    if (v->sources) { // check if variable has source terms
       GSList * j = GTS_SLIST_CONTAINER (v->sources)->items;
       while (j) {
-	GfsSourceGeneric * s = j->data;
-	if (GFS_SOURCE_GENERIC_CLASS (GTS_OBJECT (s)->klass)->stability) {
-	  gdouble dt = (* GFS_SOURCE_GENERIC_CLASS (GTS_OBJECT (s)->klass)->stability) (s, sim);
-	  if (dt < sim->advection_params.dt)
-	    sim->advection_params.dt = dt;
-	}
-	j = j->next;
+	      GfsSourceGeneric * s = j->data;
+	      if (GFS_SOURCE_GENERIC_CLASS (GTS_OBJECT (s)->klass)->stability) {
+	        gdouble dt = (* GFS_SOURCE_GENERIC_CLASS (GTS_OBJECT (s)->klass)->stability) (s, sim);
+	        if (dt < sim->advection_params.dt) // if dt for any source less than current dt:
+	          sim->advection_params.dt = dt; // set simulation dt to source dt
+	      }
+	      j = j->next;
       }
     }
     i = i->next;
   }
 
   gfs_all_reduce (GFS_DOMAIN (sim), sim->advection_params.dt, MPI_DOUBLE, MPI_MIN);
-
+  // Set time of next step (sim->tnext)
   gdouble tnext = G_MAXINT;
   i = sim->events->items;
   while (i) {
@@ -1534,8 +1562,8 @@ void gfs_simulation_set_timestep (GfsSimulation * sim)
       tnext = next + 1e-9;
     i = i->next;
   }
-  if (sim->time.end < tnext)
-    tnext = sim->time.end;
+  if (sim->time.end < tnext) // if next time step is greater than end of simulation:
+    tnext = sim->time.end; // set next time step to simulation end time
 
   gdouble n = ceil ((tnext - t)/sim->advection_params.dt);
   if (n > 0. && n < G_MAXINT) {

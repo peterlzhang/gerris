@@ -3302,11 +3302,11 @@ static void height_contact_normal_bc (FttCell * cell, HFState * hf)
       }
       /* contact line */
       else {
-        /* gdouble theta = contact_angle_bc (cell,hf); // Original Gerris BC lookup */
+         gdouble theta = contact_angle_bc (cell,hf); // Original Gerris BC lookup 
 
 /*---------------------------------------------------------------------------------------*/
         /* Withdrawing plate contact angle modifications */
-        FttVector pos;
+/*        FttVector pos;
         ftt_cell_pos(cell,&pos);
         static gdouble theta, thetaold;
         if (hf->d == 1 ) {
@@ -3325,6 +3325,7 @@ static void height_contact_normal_bc (FttCell * cell, HFState * hf)
         else {
           theta = M_PI/2.;
         }
+*/
 /* 
  if(FTT_CELL_IS_LEAF(cell)) {
     printf("LEAF: height_contact_normal used for hf->d = %d, hf->c = %d, theta(%f,%f) = %f\n",hf->d, hf->c,pos.x,pos.y,theta*180/M_PI);
@@ -3415,11 +3416,11 @@ static void contact_angle_height (FttCell * cell, GfsVariable * h, HFState * hf)
      * containing the contact line.
      */
     
-    /* gdouble theta = contact_angle_bc (cell,hf); // Original Gerris BC lookup */
+     gdouble theta = contact_angle_bc (cell,hf); // Original Gerris BC lookup 
 
 /*---------------------------------------------------------------------------------------*/
     /* Withdrawing plate contact BCs */
-    static gdouble theta, thetaold;
+/*    static gdouble theta, thetaold;
 
     if (hf->d == 1 ) {
       if (FTT_CELL_IS_LEAF(cell)) {
@@ -3439,6 +3440,7 @@ static void contact_angle_height (FttCell * cell, GfsVariable * h, HFState * hf)
     }
 
     ftt_cell_pos(cell,&pos);     
+*/
 /*
   if (FTT_CELL_IS_LEAF(cell)) {
      printf("LEAF: height_contact_tangential used for hf->d = %d, hf->c = %d, theta(%f,%f) = %f\n",hf->d, hf->c,pos.x,pos.y, theta*180./M_PI);

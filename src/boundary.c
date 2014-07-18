@@ -558,12 +558,416 @@ static FttVector find_tcp(FttCellFace * f, GfsBc *b)
   return tcp;
 }
 
-/*
-static gdouble modified_slip_length()
-{
+typedef struct {
+  gdouble phi,mua,mub,Lsa,Lsb,alpha,U,r,theta;
+} stokes_params;
 
+static gdouble stokes_stress_integral(gdouble (*f)(stokes_params,gint),gdouble a,gdouble b,gint n,stokes_params data,gint option)
+{
+  gdouble h,sum,x0,term;
+  gint k;
+  stokes_params sp1, sp2, sp3;
+
+  if (option == 0 || option == 1) {
+    data.theta = M_PI;
+  }
+  else if (option == 2 || option == 3) {
+    data.theta = 0;
+  }
+
+  sp1 = data;
+  sp2 = data;
+  sp3 = data;
+
+  h = (b - a)/n;
+  sum = 0.0;
+
+  for(k = 0;k < n;k++)
+  {
+    x0 = a + k*h;
+    sp1.r = x0;
+    sp2.r = x0+h/2.;
+    sp3.r = x0+h;
+    term = h*(f(sp1,option)+4*f(sp2,option)+f(sp3,option))/6;
+    sum += term;
+  }
+
+  return sum;
 }
-*/
+
+static gdouble stokes_v_gradient(stokes_params data,gint option)
+{
+  gdouble phi = data.phi;
+  gdouble mua = data.mua;
+  gdouble mub = data.mub;
+  gdouble Lsa = data.Lsa;
+  gdouble Lsb = data.Lsb;
+  gdouble alpha = data.alpha;
+  gdouble U = data.U;
+  gdouble r = data.r;
+  gdouble theta = data.theta;
+
+  gdouble c = cos(phi),s = sin(phi), pi=M_PI;
+  gdouble p1, p2, p3, p4;
+
+  p1 = s*s-phi*phi;
+  p2 = phi-c*s;
+  p3 = (phi-pi*c*c);
+  p4 = phi-pi;
+
+  gdouble D1, D2, D3, D4, D5, D6, D7, D8, D9, N1, N2, N3, N4, N5, N6, aa, ba, ca, da, ab, bb, cb, db,
+    aaD1, aaD2, aaD3, aaD4, aaD5, aaD6, aaD7, aaD8, aaD9,
+    baD1, baD2, baD3, baD4, baD5, baD6, baD7, baD8, baD9,
+    caD1, caD2, caD3, caD4, caD5, caD6, caD7, caD8, caD9,
+    daD1, daD2, daD3, daD4, daD5, daD6, daD7, daD8, daD9,
+    abD1, abD2, abD3, abD4, abD5, abD6, abD7, abD8, abD9,
+    cbD1, cbD2, cbD3, cbD4, cbD5, cbD6, cbD7, cbD8, cbD9,
+    dbD1, dbD2, dbD3, dbD4, dbD5, dbD6, dbD7, dbD8, dbD9,
+    aa_numer, aa_denom, ba_numer, ba_denom, ca_numer, ca_denom, da_numer, da_denom,
+    ab_numer, ab_denom, cb_numer, cb_denom, db_numer, db_denom,
+    daadr, daardr, dbadr, dbardr, dcadr, dcardr, ddadr, ddardr,
+    dabdr, dabrdr, dbbdr, dbbrdr, dcbdr, dcbrdr, ddbdr, ddbrdr,
+    psia,psib,dpsidthetaa,dpsidthetab,dpsidra,dpsidrb,
+    dpsidtheta2a,dpsidthetadra,dpsidtheta2b,dpsidthetadrb,dvrdthetaa,dvrdra,dvrdthetab,dvrdrb;
+
+  D1 = alpha*(phi-c*s)*(pi-phi+c*s);
+  D2 = (s*s-phi*phi)*(pi-phi+c*s);
+  D3 = (phi-c*s)*(2.*phi*pi-phi*phi-pi*pi+s*s);
+  D4 = alpha*s*s*(Lsa*phi-Lsb*phi+Lsb*pi-Lsa*c*s+Lsb*c*s);
+  D5 = Lsa*s*s*(s*s-phi*phi)+Lsb*(phi*phi-2.*phi*c*s-pi*phi+c*c*s*s+pi*c*s);
+  D6 = Lsa*(phi*phi-2.*phi*c*s-pi*phi+c*c*s*s+pi*c*s)+Lsb*s*s*(2.*phi*pi-phi*phi-pi*pi+s*s);
+  D7 = Lsa*Lsb*alpha*s*s*s*s;
+  D8 = Lsa*Lsb*s*s*(phi-c*s);
+  D9 = Lsa*Lsb*s*s*(pi-phi+c*s);
+
+    // aa ----------------------------------------------------------
+  N1 = -16*U*alpha*p3*p2;
+  N2 = -8*U*p3*p1;
+  N3 = -8*U*(p4*(phi*phi-phi*pi*c*c+pi*c*s)-s*s*p3);
+  N4 = -32*Lsb*U*alpha*s*s*(pi*s*s+phi-pi);
+  N5 = 16*Lsb*U*p3*p2;
+  N6 = 16*Lsa*U*p4*(phi*c*c-c*s)+16*Lsb*U*s*s*(phi*pi-phi*phi+pi*c*s);
+
+  aaD1 = -16*D1;
+  aaD2 = -8*D2;
+  aaD3 = -8*D3;
+  aaD4 = -32*D4;
+  aaD5 = -16*D5;
+  aaD6 = -16*D6;
+  aaD7 = -64*D7;
+  aaD8 = 32*D8;
+  aaD9 = 32*D9;
+
+  aa_numer = mua*mub*r*r*N1+mua*r*r*N2+mub*r*r*N3+mua*mub*r*N4+mua*r*N5+mub*r*N6;
+  aa_denom = mua*mub*(r*r*aaD1+r*aaD4+aaD7)+mua*(r*r*aaD2+r*aaD5+aaD8)+
+      mub*(r*r*aaD3+r*aaD6+aaD9);
+
+  aa = aa_numer/aa_denom;
+
+  daadr = (aa_denom*(2*r*mua*mub*N1+2*r*mua*N2+2*r*mub*N3+mua*mub*N4+mua*N5+mub*N6)-
+      aa_numer*(2*r*mua*mub*aaD1+2*r*mua*aaD2+2*r*mub*aaD3+mua*mub*aaD4+mua*aaD5+mub*aaD6))/
+      (aa_denom*aa_denom);
+
+  daardr = r*daadr+aa;
+    // ba ----------------------------------------------------------
+  N1 = 2*U*alpha*pi*c*s*p2;
+  N2 = U*pi*c*s*p1;
+  N3 = U*pi*s*(phi*phi*c-c*s*s+pi*s-phi*pi*c);
+  N4 = 4*Lsb*U*alpha*pi*c*s*s*s;
+  N5 = -2*Lsb*U*pi*c*s*p2;
+  N6 = 2*U*pi*(Lsb*s*s*s*s+Lsa*s*s-Lsa*phi*c*s);
+
+  baD1 = 2*D1;
+  baD2 = 1*D2;
+  baD3 = 1*D3;
+  baD4 = 4*D4;
+  baD5 = 2*D5;
+  baD6 = 2*D6;
+  baD7 = 8*D7;
+  baD8 = -4*D8;
+  baD9 = -4*D9;
+
+  ba_numer = mua*mub*r*r*N1+mua*r*r*N2+mub*r*r*N3+mua*mub*r*N4+mua*r*N5+mub*r*N6;
+  ba_denom = mua*mub*(r*r*baD1+r*baD4+baD7)+mua*(r*r*baD2+r*baD5+baD8)+
+      mub*(r*r*baD3+r*baD6+baD9);
+
+  ba = ba_numer/ba_denom;
+
+  dbadr = (ba_denom*(2*r*mua*mub*N1+2*r*mua*N2+2*r*mub*N3+mua*mub*N4+mua*N5+mub*N6)-
+      ba_numer*(2*r*mua*mub*baD1+2*r*mua*baD2+2*r*mub*baD3+mua*mub*baD4+mua*baD5+mub*baD6))/
+      (ba_denom*ba_denom);
+
+  dbardr = r*dbadr+ba;
+    // ca ----------------------------------------------------------
+  N1 = -8*U*alpha*s*s*p2;
+  N2 = -4*U*s*s*p1;
+  N3 = 4*U*s*s*(pi*phi-phi*phi+s*s);
+  N4 = -16*Lsb*U*alpha*s*s*s*s;
+  N5 = 8*Lsb*U*s*s*p2;
+  N6 = 8*Lsb*U*s*s*(c*s-phi+pi);
+
+  caD1 = 8*D1;
+  caD2 = 4*D2;
+  caD3 = 4*D3;
+  caD4 = 16*D4;
+  caD5 = 8*D5;
+  caD6 = 8*D6;
+  caD7 = 32*D7;
+  caD8 = -16*D8;
+  caD9 = -16*D9;
+
+  ca_numer = mua*mub*r*r*N1+mua*r*r*N2+mub*r*r*N3+mua*mub*r*N4+mua*r*N5+mub*r*N6;
+  ca_denom = mua*mub*(r*r*caD1+r*caD4+caD7)+mua*(r*r*caD2+r*caD5+caD8)+
+      mub*(r*r*caD3+r*caD6+caD9);
+
+  ca = ca_numer/ca_denom;
+
+  dcadr = (ca_denom*(2*r*mua*mub*N1+2*r*mua*N2+2*r*mub*N3+mua*mub*N4+mua*N5+mub*N6)-
+      ca_numer*(2*r*mua*mub*caD1+2*r*mua*caD2+2*r*mub*caD3+mua*mub*caD4+mua*caD5+mub*caD6))/
+      (ca_denom*ca_denom);
+
+  dcardr = r*dcadr+ca;
+    // da ----------------------------------------------------------
+  N1 = -2*U*alpha*c*s*p2;
+  N2 = -U*c*s*p1;
+  N3 = U*c*s*p1-U*s*pi*(s-phi*c);
+  N4 = -4*Lsb*U*alpha*c*s*s*s;
+  N5 = 2*Lsb*U*c*s*p2;
+  N6 = -2*U*(Lsb*s*s*s*s+Lsa*s*s-Lsa*phi*c*s);
+
+  daD1 = 2*D1;
+  daD2 = 1*D2;
+  daD3 = 1*D3;
+  daD4 = 4*D4;
+  daD5 = 2*D5;
+  daD6 = 2*D6;
+  daD7 = 8*D7;
+  daD8 = -4*D8;
+  daD9 = -4*D9;
+
+  da_numer = mua*mub*r*r*N1+mua*r*r*N2+mub*r*r*N3+mua*mub*r*N4+mua*r*N5+mub*r*N6;
+  da_denom = mua*mub*(r*r*daD1+r*daD4+daD7)+mua*(r*r*daD2+r*daD5+daD8)+
+      mub*(r*r*daD3+r*daD6+daD9);
+
+  da = da_numer/da_denom;
+
+  ddadr = (da_denom*(2*r*mua*mub*N1+2*r*mua*N2+2*r*mub*N3+mua*mub*N4+mua*N5+mub*N6)-
+      da_numer*(2*r*mua*mub*daD1+2*r*mua*daD2+2*r*mub*daD3+mua*mub*daD4+mua*daD5+mub*daD6))/
+      (da_denom*da_denom);
+
+  ddardr = r*ddadr+da;
+    // ab ----------------------------------------------------------
+  N1 = -8*U*alpha*phi*(pi-phi+c*s);
+  N2 = 4*U*phi*(phi*pi+s*s-phi*phi+pi*c*s);
+  N3 = -4*U*phi*(s*s-phi*phi+2*phi*pi-pi*pi);
+  N4 = -16*Lsa*U*alpha*phi*s*s;
+  N5 = 8*Lsa*U*phi*phi*s*s+8*Lsb*U*phi*(pi*c*c-phi*c*c+c*s);
+  N6 = 8*Lsa*U*phi*(pi-phi+c*s);
+
+  abD1 = 8*D1;
+  abD2 = 4*D2;
+  abD3 = 4*D3;
+  abD4 = 16*D4;
+  abD5 = 8*D5;
+  abD6 = 8*D6;
+  abD7 = 32*D7;
+  abD8 = -16*D8;
+  abD9 = -16*D9;
+
+  ab_numer = mua*mub*r*r*N1+mua*r*r*N2+mub*r*r*N3+mua*mub*r*N4+mua*r*N5+mub*r*N6;
+  ab_denom = mua*mub*(r*r*abD1+r*abD4+abD7)+mua*(r*r*abD2+r*abD5+abD8)+
+      mub*(r*r*abD3+r*abD6+abD9);
+
+  ab = ab_numer/ab_denom;
+
+  dabdr = (ab_denom*(2*r*mua*mub*N1+2*r*mua*N2+2*r*mub*N3+mua*mub*N4+mua*N5+mub*N6)-
+      ab_numer*(2*r*mua*mub*abD1+2*r*mua*abD2+2*r*mub*abD3+mua*mub*abD4+mua*abD5+mub*abD6))/
+      (ab_denom*ab_denom);
+
+  dabrdr = r*dabdr+ab;
+    // bb ----------------------------------------------------------
+
+  bb = 0;
+
+  dbbdr = 0;
+  dbbrdr = 0;
+    // cb ----------------------------------------------------------
+  N1 = 8*U*alpha*s*s*(c*s-phi+pi);
+  N2 = -4*U*s*s*(s*s+pi*phi-phi*phi);
+  N3 = 4*U*s*s*(2*phi*pi-phi*phi-pi*pi+s*s);
+  N4 = 16*Lsa*U*alpha*s*s*s*s;
+  N5 = -8*Lsa*U*s*s*p2;
+  N6 = -8*Lsa*U*s*s*(c*s-phi+pi);
+
+  cbD1 = 8*D1;
+  cbD2 = 4*D2;
+  cbD3 = 4*D3;
+  cbD4 = 16*D4;
+  cbD5 = 8*D5;
+  cbD6 = 8*D6;
+  cbD7 = 32*D7;
+  cbD8 = -16*D8;
+  cbD9 = -16*D9;
+
+  cb_numer = mua*mub*r*r*N1+mua*r*r*N2+mub*r*r*N3+mua*mub*r*N4+mua*r*N5+mub*r*N6;
+  cb_denom = mua*mub*(r*r*cbD1+r*cbD4+cbD7)+mua*(r*r*cbD2+r*cbD5+cbD8)+
+      mub*(r*r*cbD3+r*cbD6+cbD9);
+
+  cb = cb_numer/cb_denom;
+
+  dcbdr = (cb_denom*(2*r*mua*mub*N1+2*r*mua*N2+2*r*mub*N3+mua*mub*N4+mua*N5+mub*N6)-
+      cb_numer*(2*r*mua*mub*cbD1+2*r*mua*cbD2+2*r*mub*cbD3+mua*mub*cbD4+mua*cbD5+mub*cbD6))/
+      (cb_denom*cb_denom);
+
+  dcbrdr = r*dcbdr+cb;
+    // db ----------------------------------------------------------
+  N1 = 2*U*alpha*c*s*(pi-phi+c*s);
+  N2 = U*s*(phi*phi*c-c*s*s-pi*s-phi*pi*c);
+  N3 = U*c*s*(2*phi*pi-phi*phi-pi*pi+s*s);
+  N4 = 4*Lsa*U*alpha*c*s*s*s;
+  N5 = -2*U*(Lsa*s*s*s*s+Lsb*s*s-Lsb*phi*c*s+Lsb*pi*c*s);
+  N6 = -2*Lsa*U*c*s*(pi-phi+c*s);
+
+  dbD1 = 2*D1;
+  dbD2 = 1*D2;
+  dbD3 = 1*D3;
+  dbD4 = 4*D4;
+  dbD5 = 2*D5;
+  dbD6 = 2*D6;
+  dbD7 = 8*D7;
+  dbD8 = -4*D8;
+  dbD9 = -4*D9;
+
+  db_numer = mua*mub*r*r*N1+mua*r*r*N2+mub*r*r*N3+mua*mub*r*N4+mua*r*N5+mub*r*N6;
+  db_denom = mua*mub*(r*r*dbD1+r*dbD4+dbD7)+mua*(r*r*dbD2+r*dbD5+dbD8)+
+      mub*(r*r*dbD3+r*dbD6+dbD9);
+
+  db = db_numer/db_denom;
+
+  ddbdr = (db_denom*(2*r*mua*mub*N1+2*r*mua*N2+2*r*mub*N3+mua*mub*N4+mua*N5+mub*N6)-
+      db_numer*(2*r*mua*mub*dbD1+2*r*mua*dbD2+2*r*mub*dbD3+mua*mub*dbD4+mua*dbD5+mub*dbD6))/
+      (db_denom*db_denom);
+
+  ddbrdr = r*ddbdr+db;
+  /////////////////////////////////
+  psia = r*(aa*sin(theta)+ba*cos(theta)+ca*theta*sin(theta)+da*theta*cos(theta));
+  psib = r*(ab*sin(theta)+bb*cos(theta)+cb*theta*sin(theta)+db*theta*cos(theta));
+
+  dpsidthetaa = r*(aa*cos(theta)-ba*sin(theta)+ca*sin(theta)+
+      ca*theta*cos(theta)-da*theta*sin(theta)+da*cos(theta));
+  dpsidthetab = r*(ab*cos(theta)-bb*sin(theta)+cb*sin(theta)+
+      cb*theta*cos(theta)-db*theta*sin(theta)+db*cos(theta));
+  dpsidra = daardr*sin(theta)+dbardr*cos(theta)+dcardr*theta*sin(theta)+ddardr*theta*cos(theta);
+  dpsidrb = dabrdr*sin(theta)+dbbrdr*cos(theta)+dcbrdr*theta*sin(theta)+ddbrdr*theta*cos(theta);
+
+
+  dpsidtheta2a = r*(-aa*sin(theta)-ba*cos(theta)+2*ca*cos(theta)-
+      ca*theta*sin(theta)-2*da*sin(theta)-da*theta*cos(theta));
+  dpsidthetadra = daardr*cos(theta)-dbardr*sin(theta)+
+      dcardr*sin(theta)+dcardr*theta*cos(theta)-ddardr*theta*sin(theta)+ddardr*cos(theta);
+
+  dpsidtheta2b = r*(-ab*sin(theta)-bb*cos(theta)+2*cb*cos(theta)-
+      cb*theta*sin(theta)-2*db*sin(theta)-db*theta*cos(theta));
+  dpsidthetadrb = dabrdr*cos(theta)-dbbrdr*sin(theta)+
+      dcbrdr*sin(theta)+dcbrdr*theta*cos(theta)-ddbrdr*theta*sin(theta)+ddbrdr*cos(theta);
+
+
+  dvrdthetaa = -(1/(r*r))*dpsidtheta2a;
+  dvrdra = (1/(r*r))*dpsidthetaa-(1/r)*dpsidthetadra;
+
+  dvrdthetab = -(1/(r*r))*dpsidtheta2b;
+  dvrdrb = (1/(r*r))*dpsidthetab-(1/r)*dpsidthetadrb;
+
+//////////////////////////////////
+//  double x = data.r;
+//  return sqrt(2.-x)*cos(x);
+  if (option == 0) {
+    return dvrdthetaa;
+  }
+  else if (option == 1) {
+    return dvrdra;
+  }
+  else if (option == 2) {
+    return dvrdthetab;
+  }
+  else if (option == 3) {
+    return dvrdrb;
+  }
+  else {
+    return 0;
+  }
+}
+
+
+static gdouble modified_slip_length(FttCellFace * f, GfsBc * b)
+{
+  gdouble h = ftt_cell_size (f->cell);
+  gdouble Ls0 = gfs_function_face_value (GFS_BC_JOSEPH (b)->lambda, f);
+//  gdouble tauc = gfs_function_face_value (GFS_BC_JOSEPH (b)->tauc,f);
+  gdouble tauc = gfs_function_face_value (GFS_BC_VALUE (b)->val, f)/Ls0;
+//  printf("tauc = %f\n",tauc);
+
+  gdouble theta, beta, U, tau0, tau1, tau2, r01, r02, rc1, rc2, tauavgmod, lambda, dudt, dudn;
+  FttVector pos;
+
+  ftt_cell_pos(f->neighbor,&pos);
+  
+  U = fabs(GFS_VALUE(f->neighbor,b->v)-gfs_function_face_value (GFS_BC_VALUE (b)->val, f));
+  dudt = boundary_tangential_gradient(f, b->v);
+  dudn = (GFS_VALUE(f->neighbor, b->v)-GFS_VALUE(f->cell,b->v))/h;
+
+  theta = get_dynamic_contact_angle(f->neighbor,b->vofv,0);
+  beta = M_PI-theta;
+//    tau0 = fabs(dudn); // Simulation stress for Navier BC 
+
+  tau0 = fabs(dudn);//+fabs(dudt); // Simulation stress for Joseph's BC 
+
+// compute new r0 using generalized stokes corner flow solution
+  stokes_params data;
+  data.phi = theta;
+  data.mua = 5.;
+  data.mub = 1.;
+  data.Lsa = 0.01;
+  data.Lsb = 0.01;
+  data.alpha = 0.;
+  data.U = -U;
+  data.r = 1.;
+  data.theta = M_PI;
+
+  gdouble dvdna = stokes_v_gradient(data,0); 
+  gdouble dvdta = stokes_v_gradient(data,1);
+
+  data.theta = 0.;
+  gdouble dvdnb = stokes_v_gradient(data,2);
+  gdouble dvdtb = stokes_v_gradient(data,3);
+  printf("phi = %f, U = %f, dvdna = %f, dvdta = %f, dvdnb = %f, dvdtb = %f\n",data.phi,data.U,dvdna,dvdta,dvdnb,dvdtb);
+//////////////////////////////////////////////
+  r01 = (2*sin(theta)*sin(theta))/(theta-sin(theta)*cos(theta))*U/tau0;
+  r02 = (2*sin(beta)*sin(beta))/(beta-sin(beta)*cos(beta))*U/tau0;
+  rc1 = U/tauc*(2*sin(theta)*sin(theta))/(theta-sin(theta)*cos(theta));
+  rc2 = U/tauc*(2*sin(beta)*sin(beta))/(beta-sin(beta)*cos(beta));
+
+  tau1 = tauc*rc1*(1+log(r01/rc1));
+  tau2 = tauc*rc2*(1+log(r02/rc2));
+  tauavgmod = (tau1+tau2)/(r01+r02);
+//  printf("tauavgmod = %f, tau0 = %f\n",tauavgmod,tau0);
+  if ((tauavgmod)/tauc > 1 || (tauavgmod) < 0) { 
+    lambda = gfs_function_face_value (GFS_BC_VALUE (b)->val, f)/tau0;
+//    printf("tauavgmod > tauc: Ls/Ls0 = %f\n",lambda/Ls0);
+//    lambda = Ls0/pow(1-0.9999,0.5);
+/*    printf("ERROR: (%f,%f) tau_avg > tauc %f > %f, modified LS/Ls0 = %f\n",
+            pos.x,pos.y,tauavgmod,tauc,lambda/Ls0); */
+  }
+  else {
+    lambda = Ls0*tauavgmod/tau0;
+//    printf("tauavgmod < tauc: Ls/Ls0 = %f\n",lambda/Ls0);
+//    lambda = Ls0/pow(1-(tauavgmod)/tauc,0.5);
+/*    printf("(%f,%f) Modified Ls/Ls0 = %f\n",pos.x,pos.y,lambda/Ls0); */
+  }
+
+  return lambda;
+}
+
 
 static void joseph (FttCellFace * f, GfsBc * b)
 { 
@@ -588,44 +992,23 @@ static void joseph (FttCellFace * f, GfsBc * b)
 
   dudt = boundary_tangential_gradient(f, b->v);
   dudn = (GFS_VALUE(f->neighbor, b->v)-GFS_VALUE(f->cell,b->v))/h;
-  temp_var = dudt*(2.*h);
   v1 = GFS_VALUE(f->neighbor, b->v);
 
-  // determine modified slip length
+  ftt_cell_pos(f->neighbor,&pos);
+  // If cell contains interface, determine modified slip length
   if(b->vofv && is_interfacial(f->neighbor,b->vofv) ) {
-    U = fabs(GFS_VALUE(f->neighbor,b->v)-gfs_function_face_value (GFS_BC_VALUE (b)->val, f));
-//    printf("cell contains interface position (%f,%f), V = %f\n",pos.x,pos.y,U);
+/*    gdouble vtop = GFS_STATE (f->neighbor)->f[2].un;
+    gdouble vbot = GFS_STATE (f->neighbor)->f[3].un;
+    gdouble vcent = GFS_VALUE (f->neighbor,b->v);
+    printf("vtop = %f, vbot = %f, vcent = %f\n",vtop,vbot,vcent);
+*/
     tcp = find_tcp(f,b);
-    ftt_cell_pos(f->neighbor,&pos);
     if (tcp.x > pos.x + h/2. || tcp.x < pos.x - h/2. || tcp.y > pos.y + h/2. || tcp.y < pos.y - h/2.) {
-      printf("TCP outside of cell(%f,%f)\n",pos.x,pos.y);
+      /* printf("TCP outside of cell(%f,%f)\n",pos.x,pos.y); */
     }
-    else {
-
-      theta = get_dynamic_contact_angle(f->neighbor,b->vofv,0);
-      beta = M_PI-theta;
-//    tau0 = fabs(dudn); // Simulation stress for Navier BC 
-      tau0 = fabs(dudn)+fabs(dudt); // Simulation stress for Joseph's BC 
-      r01 = (2*sin(theta)*sin(theta))/(theta-sin(theta)*cos(theta))*U/tau0;
-      r02 = (2*sin(beta)*sin(beta))/(beta-sin(beta)*cos(beta))*U/tau0;
-      rc1 = U/tauc*(2*sin(theta)*sin(theta))/(theta-sin(theta)*cos(theta));
-      rc2 = U/tauc*(2*sin(beta)*sin(beta))/(beta-sin(beta)*cos(beta));
-
-      tau1 = tauc*rc1*(1+log(r01/rc1));
-      tau2 = tauc*rc2*(1+log(r02/rc2));
-      tauavgmod = (tau1+tau2)/(r01+r02);
-
-      if ((tauavgmod)/tauc > 1 || (tauavgmod) < 0) { 
-        lambda = Ls0/pow(1-0.9999,0.5);
-        printf("ERROR: (%f,%f) tau_avg > tauc %f > %f, modified LS/Ls0 = %f\n",
-                pos.x,pos.y,tauavgmod,tauc,lambda/Ls0);
-      }
-      else {
-        lambda = Ls0/pow(1-(tauavgmod)/tauc,0.5);
-        printf("(%f,%f) Modified Ls/Ls0 = %f\n",pos.x,pos.y,lambda/Ls0);
-      }
+    else { // TCP inside of cell. Compute modified slip length
+      lambda = modified_slip_length(f,b);
     }
-    
   }
 
   if (!nlg) { // at corner, no left ghost cell
@@ -784,6 +1167,7 @@ static void navier (FttCellFace * f, GfsBc * b)
 {
   gdouble h = ftt_cell_size (f->cell);
   gdouble lambda = gfs_function_face_value (GFS_BC_NAVIER (b)->lambda, f);
+
   GFS_VALUE (f->cell, b->v) = 
     (2.*gfs_function_face_value (GFS_BC_VALUE (b)->val, f)*h
      - (h - 2.*lambda)*GFS_VALUE (f->neighbor, b->v))/(h + 2.*lambda);
@@ -791,7 +1175,7 @@ static void navier (FttCellFace * f, GfsBc * b)
 
 static void face_navier (FttCellFace * f, GfsBc * b)
 {
-  printf("face_navier called \n");
+//  printf("face_navier called \n");
   gdouble h = ftt_cell_size (f->cell);
   gdouble lambda = gfs_function_face_value (GFS_BC_NAVIER (b)->lambda, f);
   GFS_STATE (f->cell)->f[f->d].v = GFS_STATE (f->neighbor)->f[FTT_OPPOSITE_DIRECTION (f->d)].v = 
