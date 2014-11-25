@@ -541,6 +541,14 @@ static void simulation_run (GfsSimulation * sim)
 
     sim->time.t = sim->tnext;
     sim->time.i++;
+    
+   FILE *file = fopen("file.txt", "a");
+   if (file == NULL) {
+     printf("Error opening file!\n");
+   }
+   fprintf(file, "Time: %f\n", sim->time.t);
+   fclose(file);
+
 
     gfs_simulation_set_timestep (sim);
     gfs_advance_tracers (sim, sim->advection_params.dt);

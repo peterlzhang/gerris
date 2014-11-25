@@ -3391,7 +3391,7 @@ gdouble get_dynamic_contact_angle(FttCell * cell, GfsVariable * vofv, FttDirecti
     theta = M_PI-alpha;
   }
 
-//  printf("get_dynamic_contact_angle: p1 = (%f, %f) p2 = (%f, %f), theta = %f\n",p1.x,p1.y,p2.x,p2.y,theta*180./M_PI);
+  printf("get_dynamic_contact_angle: p1 = (%f, %f) p2 = (%f, %f), theta = %f\n",p1.x,p1.y,p2.x,p2.y,theta*180./M_PI);
 
   return theta;
 
@@ -3489,7 +3489,7 @@ static void box_periodic_bc (GfsBox * box, HFState * hf)
 				  (FttCellTraverseFunc) height_periodic_bc, hf);
 }
 
-/* Instant angle function no working
+/* Instant angle function not working
  * Causes segmentation fault
  */
 static void instant_angle(FttCell * cell, HFState * hf)

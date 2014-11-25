@@ -561,40 +561,14 @@ static FttVector find_tcp(FttCellFace * f, GfsBc *b)
 typedef struct {
   gdouble phi,mua,mub,Lsa,Lsb,alpha,U,r,theta;
 } stokes_params;
-
-static gdouble stokes_stress_integral(gdouble (*f)(stokes_params,gint),gdouble a,gdouble b,gint n,stokes_params data,gint option)
-{
-  gdouble h,sum,x0,term;
-  gint k;
-  stokes_params sp1, sp2, sp3;
-
-  if (option == 0 || option == 1) {
-    data.theta = M_PI;
-  }
-  else if (option == 2 || option == 3) {
-    data.theta = 0;
-  }
-
-  sp1 = data;
-  sp2 = data;
-  sp3 = data;
-
-  h = (b - a)/n;
-  sum = 0.0;
-
-  for(k = 0;k < n;k++)
-  {
-    x0 = a + k*h;
-    sp1.r = x0;
-    sp2.r = x0+h/2.;
-    sp3.r = x0+h;
-    term = h*(f(sp1,option)+4*f(sp2,option)+f(sp3,option))/6;
-    sum += term;
-  }
-
-  return sum;
-}
-
+/* stokes_v_gradeient returns the absolute value of the velocity gradient
+    for the parameters given in @data. @option specifies tangential or
+    normal velocity gradient for fluid A or B.
+    option = 0 returns dvdn_A
+    option = 1 returns dvdt_A
+    option = 2 returns dvdn_B
+    option = 3 returns dvdt_B
+*/
 static gdouble stokes_v_gradient(stokes_params data,gint option)
 {
   gdouble phi = data.phi;
@@ -628,7 +602,8 @@ static gdouble stokes_v_gradient(stokes_params data,gint option)
     daadr, daardr, dbadr, dbardr, dcadr, dcardr, ddadr, ddardr,
     dabdr, dabrdr, dbbdr, dbbrdr, dcbdr, dcbrdr, ddbdr, ddbrdr,
     psia,psib,dpsidthetaa,dpsidthetab,dpsidra,dpsidrb,
-    dpsidtheta2a,dpsidthetadra,dpsidtheta2b,dpsidthetadrb,dvrdthetaa,dvrdra,dvrdthetab,dvrdrb;
+    dpsidtheta2a,dpsidthetadra,dpsidtheta2b,dpsidthetadrb,
+    dvdna,dvdta,dvdnb,dvdtb;
 
   D1 = alpha*(phi-c*s)*(pi-phi+c*s);
   D2 = (s*s-phi*phi)*(pi-phi+c*s);
@@ -872,98 +847,178 @@ static gdouble stokes_v_gradient(stokes_params data,gint option)
       dcbrdr*sin(theta)+dcbrdr*theta*cos(theta)-ddbrdr*theta*sin(theta)+ddbrdr*cos(theta);
 
 
-  dvrdthetaa = -(1/(r*r))*dpsidtheta2a;
-  dvrdra = (1/(r*r))*dpsidthetaa-(1/r)*dpsidthetadra;
+  dvdna = -(1/(r*r))*dpsidtheta2a;
+  dvdta = (1/(r*r))*dpsidthetaa-(1/r)*dpsidthetadra;
 
-  dvrdthetab = -(1/(r*r))*dpsidtheta2b;
-  dvrdrb = (1/(r*r))*dpsidthetab-(1/r)*dpsidthetadrb;
+  dvdnb = -(1/(r*r))*dpsidtheta2b;
+  dvdtb = (1/(r*r))*dpsidthetab-(1/r)*dpsidthetadrb;
 
-//////////////////////////////////
-//  double x = data.r;
-//  return sqrt(2.-x)*cos(x);
   if (option == 0) {
-    return dvrdthetaa;
+    return fabs(dvdna);
   }
   else if (option == 1) {
-    return dvrdra;
+    return fabs(dvdta);
   }
   else if (option == 2) {
-    return dvrdthetab;
+    return fabs(dvdnb);
   }
   else if (option == 3) {
-    return dvrdrb;
+    return fabs(dvdtb);
   }
   else {
     return 0;
   }
 }
 
+static gdouble stokes_stress_integral(gdouble (*f)(stokes_params,gint),gdouble a,gdouble b,gint n,stokes_params data,gint option)
+{
+  gdouble h,sum,x0,term;
+  gint k;
+  stokes_params sp1, sp2, sp3;
+
+  if (option == 0 || option == 1) {
+    data.theta = M_PI;
+  }
+  else if (option == 2 || option == 3) {
+    data.theta = 0;
+  }
+
+  sp1 = data;
+  sp2 = data;
+  sp3 = data;
+
+  h = (b - a)/n;
+  sum = 0.0;
+
+  for(k = 0;k < n;k++)
+  {
+    x0 = a + k*h;
+    sp1.r = x0;
+    sp2.r = x0+h/2.;
+    sp3.r = x0+h;
+    term = h*(f(sp1,option)+4*f(sp2,option)+f(sp3,option))/6;
+    sum += term;
+  }
+
+  return sum;
+}
+static gdouble stokes_root_finder(gdouble (*f)(stokes_params,gint),gdouble val,gdouble a, gdouble b,stokes_params data,gint option) {
+  gdouble tempv, tol = 0.001;
+  gint k,n = 100;
+ 
+  if (option == 0 || option == 1) {
+    data.theta = M_PI;
+  }
+  else if (option == 2 || option == 3) {
+    data.theta = 0;
+  }
+ 
+ 
+  for(k = 0;k < n;k++) {
+    data.r = (a+b)/2.;
+    tempv = f(data,option)-val;
+    if (fabs(tempv) < tol) { return data.r; }
+    if (tempv > 0) {
+      a = data.r;
+    }
+    else if (tempv < 0) {
+      b = data.r;
+    }
+  }
+  return data.r;
+}
+
 
 static gdouble modified_slip_length(FttCellFace * f, GfsBc * b)
 {
+  /* Algorithm for computing modified slip length
+      1. Get macroscopic flow parameters:
+        - velocity of interface relative to wall
+        - dynamic contact angle
+        - velocity gradient
+      2. Find the critical length r given the critical stress
+        - there exists a numerical critical stress that is given by the BC v_b = v_0 + Ls*tau
+        - numerical critical stress is achieved when v_b = 0. Therefore tau_c = -v_0/Ls
+      3. Compute the integral of the velocity gradient given by the analytical stokes corner flow
+        - slip length is used to relate the length scales between macroscopic simulation and the stokes problem
+        - Integral is taken from r_c to r where r is the distance from the tcp to the edge of the cell
+      4. Use the integral of the velocity gradient from the stokes flow to determine a correction coefficient    
+   */
+  // Setup and initialization //
   gdouble h = ftt_cell_size (f->cell);
   gdouble Ls0 = gfs_function_face_value (GFS_BC_JOSEPH (b)->lambda, f);
 //  gdouble tauc = gfs_function_face_value (GFS_BC_JOSEPH (b)->tauc,f);
   gdouble tauc = gfs_function_face_value (GFS_BC_VALUE (b)->val, f)/Ls0;
 //  printf("tauc = %f\n",tauc);
-
   gdouble theta, beta, U, tau0, tau1, tau2, r01, r02, rc1, rc2, tauavgmod, lambda, dudt, dudn;
-  FttVector pos;
-
-  ftt_cell_pos(f->neighbor,&pos);
+  gdouble int_dvdna, int_dvdta, int_dvdnb, int_dvdtb, rcnA, rcnB, rctA, rctB, rA, rB, c,
+    total_stokes_stress,total_sim_stress;
+  FttVector pos, tcp;
   
+  ftt_cell_pos(f->neighbor,&pos);
+  // 1. Get macroscopic flow parameters //
   U = fabs(GFS_VALUE(f->neighbor,b->v)-gfs_function_face_value (GFS_BC_VALUE (b)->val, f));
   dudt = boundary_tangential_gradient(f, b->v);
   dudn = (GFS_VALUE(f->neighbor, b->v)-GFS_VALUE(f->cell,b->v))/h;
-
   theta = get_dynamic_contact_angle(f->neighbor,b->vofv,0);
   beta = M_PI-theta;
 //    tau0 = fabs(dudn); // Simulation stress for Navier BC 
-
   tau0 = fabs(dudn);//+fabs(dudt); // Simulation stress for Joseph's BC 
 
-// compute new r0 using generalized stokes corner flow solution
-  stokes_params data;
+  // 2. Compute critical length r //
+  stokes_params data; // initialize stokes corner flow parameters
   data.phi = theta;
-  data.mua = 5.;
+  data.mua = 1.;
   data.mub = 1.;
-  data.Lsa = 0.01;
-  data.Lsb = 0.01;
+  data.Lsa = Ls0;
+  data.Lsb = Ls0;
   data.alpha = 0.;
   data.U = -U;
   data.r = 1.;
-  data.theta = M_PI;
+  data.theta = 0;
 
-  gdouble dvdna = stokes_v_gradient(data,0); 
-  gdouble dvdta = stokes_v_gradient(data,1);
+  tcp = find_tcp(f,b);
+  if (f->d == 0 || f-> d == 1 ) {
+    rA = (pos.y+h/2.)-tcp.y;
+    rB = tcp.y-(pos.y-h/2.);
+  }
+  else if (f->d == 2 || f->d == 3) {
+    rA = pos.x+h/2.-tcp.x; // FIXME: may not return the corect sign and A and B may be switched
+    rB = tcp.x-pos.x-h/2.;
+  }
+//  printf("tcp.y = %f, pos.y = %f, h = %f, rA = %f, rB = %f\n",tcp.y,pos.y,h,rA,rB);
+//  printf("phi = %f, Lsa = %f, Lsb = %f, alpha = %f, U = %f\n",data.phi,data.Lsa,data.Lsb,data.alpha,data.U);
 
-  data.theta = 0.;
-  gdouble dvdnb = stokes_v_gradient(data,2);
-  gdouble dvdtb = stokes_v_gradient(data,3);
-  printf("phi = %f, U = %f, dvdna = %f, dvdta = %f, dvdnb = %f, dvdtb = %f\n",data.phi,data.U,dvdna,dvdta,dvdnb,dvdtb);
-//////////////////////////////////////////////
-  r01 = (2*sin(theta)*sin(theta))/(theta-sin(theta)*cos(theta))*U/tau0;
-  r02 = (2*sin(beta)*sin(beta))/(beta-sin(beta)*cos(beta))*U/tau0;
-  rc1 = U/tauc*(2*sin(theta)*sin(theta))/(theta-sin(theta)*cos(theta));
-  rc2 = U/tauc*(2*sin(beta)*sin(beta))/(beta-sin(beta)*cos(beta));
+  // critical r for normal velocity gradient for fluid A
+  rcnA = stokes_root_finder(stokes_v_gradient,tauc,0,rA,data,0);
+  rctA = stokes_root_finder(stokes_v_gradient,tauc,0,rA,data,1);
+  rcnB = stokes_root_finder(stokes_v_gradient,tauc,0,rB,data,2);
+  rctB = stokes_root_finder(stokes_v_gradient,tauc,0,rB,data,3);
 
-  tau1 = tauc*rc1*(1+log(r01/rc1));
-  tau2 = tauc*rc2*(1+log(r02/rc2));
-  tauavgmod = (tau1+tau2)/(r01+r02);
-//  printf("tauavgmod = %f, tau0 = %f\n",tauavgmod,tau0);
-  if ((tauavgmod)/tauc > 1 || (tauavgmod) < 0) { 
-    lambda = gfs_function_face_value (GFS_BC_VALUE (b)->val, f)/tau0;
-//    printf("tauavgmod > tauc: Ls/Ls0 = %f\n",lambda/Ls0);
-//    lambda = Ls0/pow(1-0.9999,0.5);
-/*    printf("ERROR: (%f,%f) tau_avg > tauc %f > %f, modified LS/Ls0 = %f\n",
-            pos.x,pos.y,tauavgmod,tauc,lambda/Ls0); */
+//  printf("rcnA = %f, rctA = %f for rA = %f, phi = %f, U = %f, tauc = %f\n",rcnA,rctA,rA,data.phi,data.U,tauc);
+//  printf("rcnB = %f, rctB = %f for rB = %f, phi = %f, U = %f, tauc = %f\n",rcnB,rctB,rB,data.phi,data.U,tauc);
+
+  // 3. Compute integral of the stress for the stokes corner flow
+  int_dvdna = stokes_stress_integral(stokes_v_gradient,rcnA,rA,10000,data,0); // integral of normal stress for fluid A
+  int_dvdta = stokes_stress_integral(stokes_v_gradient,rctA,rA,10000,data,1);
+  int_dvdnb = stokes_stress_integral(stokes_v_gradient,rcnB,rB,10000,data,2);
+  int_dvdtb = stokes_stress_integral(stokes_v_gradient,rctB,rB,10000,data,3);
+
+//  printf("int_dvdna = %f, intdvdta = %f, intdvdnb = %f, intdvdtb = %f\n",int_dvdna,int_dvdta,int_dvdnb,int_dvdtb);
+//  printf("macro dudn*h = %f, dudt*h = %f\n",dudn*h,dudt*h);
+
+  total_stokes_stress = fabs(int_dvdna)+fabs(int_dvdta)+fabs(int_dvdnb)+fabs(int_dvdtb);
+  total_sim_stress = fabs(dudn*h)+fabs(dudt*h);
+
+  if (total_stokes_stress > total_sim_stress) {
+    c = total_stokes_stress/total_sim_stress;
   }
   else {
-    lambda = Ls0*tauavgmod/tau0;
-//    printf("tauavgmod < tauc: Ls/Ls0 = %f\n",lambda/Ls0);
-//    lambda = Ls0/pow(1-(tauavgmod)/tauc,0.5);
-/*    printf("(%f,%f) Modified Ls/Ls0 = %f\n",pos.x,pos.y,lambda/Ls0); */
+    c = 1.;
+    printf("WARNING: Stokes stress < Simulation stress\n");
   }
+  //printf("scaling coefficient c = %f\n",c);
+  lambda = c*Ls0;
 
   return lambda;
 }
@@ -990,6 +1045,7 @@ static void joseph (FttCellFace * f, GfsBc * b)
   gdouble Ls0 = lambda, theta, beta;
   gdouble r01, r02, U, tauavgmod, v1, temp_var;
 
+  // Compute the velocit gradient in the cell containing
   dudt = boundary_tangential_gradient(f, b->v);
   dudn = (GFS_VALUE(f->neighbor, b->v)-GFS_VALUE(f->cell,b->v))/h;
   v1 = GFS_VALUE(f->neighbor, b->v);
@@ -1010,7 +1066,7 @@ static void joseph (FttCellFace * f, GfsBc * b)
       lambda = modified_slip_length(f,b);
     }
   }
-
+  // Apply Joseph's BC. use one sided difference at corners of the domain.
   if (!nlg) { // at corner, no left ghost cell
     FttCell * nrrg = ftt_cell_neighbor (nrg, nd+1);
     FttCell * nrr = ftt_cell_neighbor (nr, nd+1);
@@ -1163,10 +1219,116 @@ GfsBcClass * gfs_bc_joseph_class (void)
  * \beginobject{GfsBcNavier}
  */
 
+static gdouble navier_modified_slip_length(FttCellFace * f, GfsBc * b)
+{
+  /* Algorithm for computing modified slip length
+      1. Get macroscopic flow parameters:
+        - velocity of interface relative to wall
+        - dynamic contact angle
+        - velocity gradient
+      2. Find the critical length r given the critical stress
+        - there exists a numerical critical stress that is given by the BC v_b = v_0 + Ls*tau
+        - numerical critical stress is achieved when v_b = 0. Therefore tau_c = -v_0/Ls
+      3. Compute the integral of the velocity gradient given by the analytical stokes corner flow
+        - slip length is used to relate the length scales between macroscopic simulation and the stokes problem
+        - Integral is taken from r_c to r where r is the distance from the tcp to the edge of the cell
+      4. Use the integral of the velocity gradient from the stokes flow to determine a correction coefficient    
+   */
+  // Setup and initialization //
+  gdouble h = ftt_cell_size (f->cell);
+  gdouble Ls0 = gfs_function_face_value (GFS_BC_JOSEPH (b)->lambda, f);
+  gdouble tauc = gfs_function_face_value (GFS_BC_VALUE (b)->val, f)/Ls0; // FIXME: should this be absolute value?
+//  printf("tauc = %f\n",tauc);
+  gdouble theta, beta, U, tau0, tau1, tau2, r01, r02, rc1, rc2, tauavgmod, lambda, dudt, dudn;
+  gdouble int_dvdna, int_dvdta, int_dvdnb, int_dvdtb, rcnA, rcnB, rctA, rctB, rA, rB, c,
+    total_stokes_stress,total_sim_stress;
+  FttVector pos, tcp;
+  
+  ftt_cell_pos(f->neighbor,&pos);
+  // 1. Get macroscopic flow parameters //
+  U = fabs(GFS_VALUE(f->neighbor,b->v)-gfs_function_face_value (GFS_BC_VALUE (b)->val, f));
+//  dudt = boundary_tangential_gradient(f, b->v);
+  dudn = (GFS_VALUE(f->neighbor, b->v)-GFS_VALUE(f->cell,b->v))/h;
+  theta = get_dynamic_contact_angle(f->neighbor,b->vofv,0);
+  beta = M_PI-theta;
+//    tau0 = fabs(dudn); // Simulation stress for Navier BC 
+  tau0 = fabs(dudn);//+fabs(dudt); // Simulation stress for Joseph's BC 
+
+  // 2. Compute critical length r //
+  stokes_params data; // initialize stokes corner flow parameters
+  data.phi = theta;
+  data.mua = 1.;
+  data.mub = 1.;
+  data.Lsa = Ls0;
+  data.Lsb = Ls0;
+  data.alpha = 0.;
+  data.U = -U;
+  data.r = 1.;
+  data.theta = 0;
+
+  tcp = find_tcp(f,b);
+  if (f->d == 0 || f-> d == 1 ) {
+    rA = (pos.y+h/2.)-tcp.y;
+    rB = tcp.y-(pos.y-h/2.);
+  }
+  else if (f->d == 2 || f->d == 3) {
+    rA = pos.x+h/2.-tcp.x; // FIXME: may not return the corect sign and A and B may be switched
+    rB = tcp.x-pos.x-h/2.;
+  }
+//  printf("tcp.y = %f, pos.y = %f, h = %f, rA = %f, rB = %f\n",tcp.y,pos.y,h,rA,rB);
+//  printf("phi = %f, Lsa = %f, Lsb = %f, alpha = %f, U = %f\n",data.phi,data.Lsa,data.Lsb,data.alpha,data.U);
+
+  // critical r for normal velocity gradient for fluid A
+  rcnA = stokes_root_finder(stokes_v_gradient,tauc,0,rA,data,0);
+  rcnB = stokes_root_finder(stokes_v_gradient,tauc,0,rB,data,2);
+
+  // 3. Compute integral of the stress for the stokes corner flow
+  int_dvdna = stokes_stress_integral(stokes_v_gradient,rcnA,rA,10000,data,0); // integral of normal stress for fluid A
+  int_dvdnb = stokes_stress_integral(stokes_v_gradient,rcnB,rB,10000,data,2);
+
+  total_stokes_stress = fabs(int_dvdna)+fabs(int_dvdnb);
+  total_sim_stress = fabs(dudn*h);
+
+  if (total_stokes_stress > total_sim_stress) {
+    c = total_stokes_stress/total_sim_stress;
+  }
+  else {
+    c = 1.;
+    printf("WARNING: Stokes stress < Simulation stress\n");
+  }
+  //printf("scaling coefficient c = %f\n",c);
+  lambda = c*Ls0;
+
+  FILE *file = fopen("file.txt", "a");
+  if (file == NULL) {
+    printf("Error opening file!\n");
+  }
+  fprintf(file, "scaling coefficient c = %f stokes tau = %f, sim tau = %f\n", c, total_stokes_stress*h,total_sim_stress*h);
+  fclose(file);
+  
+return lambda;
+}
+
 static void navier (FttCellFace * f, GfsBc * b)
 {
   gdouble h = ftt_cell_size (f->cell);
   gdouble lambda = gfs_function_face_value (GFS_BC_NAVIER (b)->lambda, f);
+  gdouble dudn;
+  FttVector pos, tcp;
+
+  dudn = (GFS_VALUE(f->neighbor, b->v)-GFS_VALUE(f->cell,b->v))/h;
+  
+  ftt_cell_pos(f->neighbor,&pos);
+  // If cell contains interface, determine modified slip length
+  if(b->vofv && is_interfacial(f->neighbor,b->vofv) ) {
+    tcp = find_tcp(f,b);
+    if (tcp.x > pos.x + h/2. || tcp.x < pos.x - h/2. || tcp.y > pos.y + h/2. || tcp.y < pos.y - h/2.) {
+      /* printf("TCP outside of cell(%f,%f)\n",pos.x,pos.y); */
+    }
+    else { // TCP inside of cell. Compute modified slip length
+      lambda = navier_modified_slip_length(f,b);
+    }
+  }
 
   GFS_VALUE (f->cell, b->v) = 
     (2.*gfs_function_face_value (GFS_BC_VALUE (b)->val, f)*h
