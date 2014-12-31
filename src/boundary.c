@@ -256,7 +256,7 @@ static void dirichlet (FttCellFace * f, GfsBc * b) // FttCellFace structure stor
   GFS_VALUE (f->cell, b->v) = 
     2.*gfs_function_face_value (GFS_BC_VALUE (b)->val, f)
     - GFS_VALUE (f->neighbor, b->v);
-  printf("Dirichlet called %d,\n",count);
+//  printf("Dirichlet called %d,\n",count);
 }
 
 static void dirichlet_vof (FttCellFace * f, GfsBc * b)
@@ -536,6 +536,87 @@ GfsBcClass * gfs_bc_navier_class (void)
 }
 
 /** \endobject{GfsBcNavier} */
+
+/***************************************************************************************************************************/
+/* NEW BC CREATED BY PETER ZHANG */
+/**
+ * Navier boundary condition.
+ * \beginobject{GfsBcJoseph}
+ */
+
+static void joseph (FttCellFace * f, GfsBc * b)
+{
+  gdouble h = ftt_cell_size (f->cell);
+  gdouble lambda = gfs_function_face_value (GFS_BC_JOSEPH (b)->lambda, f);
+  GFS_VALUE (f->cell, b->v) = 
+    (2.*gfs_function_face_value (GFS_BC_VALUE (b)->val, f)*h
+     - (h - 2.*lambda)*GFS_VALUE (f->neighbor, b->v))/(h + 2.*lambda);
+}
+
+static void face_joseph (FttCellFace * f, GfsBc * b)
+{
+  gdouble h = ftt_cell_size (f->cell);
+  gdouble lambda = gfs_function_face_value (GFS_BC_JOSEPH (b)->lambda, f);
+  GFS_STATE (f->cell)->f[f->d].v = GFS_STATE (f->neighbor)->f[FTT_OPPOSITE_DIRECTION (f->d)].v = 
+    (gfs_function_face_value (GFS_BC_VALUE (b)->val, f)*h + 
+     2.*lambda*GFS_VALUE (f->neighbor, b->v))/(h + 2.*lambda);
+}
+
+static void bc_joseph_read (GtsObject ** o, GtsFile * fp)
+{
+  if (GTS_OBJECT_CLASS (gfs_bc_joseph_class ())->parent_class->read)
+    (* GTS_OBJECT_CLASS (gfs_bc_joseph_class ())->parent_class->read) (o, fp);
+  if (fp->type == GTS_ERROR)
+    return;
+  GfsBcJoseph * bc = GFS_BC_JOSEPH (*o);
+  if (bc->lambda == NULL)
+    bc->lambda = gfs_function_new (gfs_function_class (), 0.);
+  gfs_function_set_units (bc->lambda, 1.);
+  gfs_function_read (bc->lambda, gfs_box_domain (GFS_BC (bc)->b->box), fp);
+}
+
+static void bc_joseph_write (GtsObject * o, FILE * fp)
+{  
+  (* GTS_OBJECT_CLASS (gfs_bc_joseph_class ())->parent_class->write) (o, fp);
+  if (GFS_BC_JOSEPH (o)->lambda)
+    gfs_function_write (GFS_BC_JOSEPH (o)->lambda, fp);
+}
+
+static void gfs_bc_joseph_init (GfsBc * object)
+{
+  object->bc =                     (FttFaceTraverseFunc) joseph;
+  object->homogeneous_bc =         (FttFaceTraverseFunc) homogeneous_dirichlet;
+  object->face_bc =                (FttFaceTraverseFunc) face_joseph;
+}
+
+static void gfs_bc_joseph_class_init (GtsObjectClass * klass)
+{
+  klass->read = bc_joseph_read;
+  klass->write = bc_joseph_write;
+}
+
+GfsBcClass * gfs_bc_joseph_class (void)
+{
+  static GfsBcClass * klass = NULL;
+
+  if (klass == NULL) {
+    GtsObjectClassInfo gfs_bc_joseph_info = {
+      "GfsBcJoseph",
+      sizeof (GfsBcJoseph),
+      sizeof (GfsBcClass),
+      (GtsObjectClassInitFunc) gfs_bc_joseph_class_init,
+      (GtsObjectInitFunc) gfs_bc_joseph_init,
+      (GtsArgSetFunc) NULL,
+      (GtsArgGetFunc) NULL
+    };
+    klass = gts_object_class_new (GTS_OBJECT_CLASS (gfs_bc_value_class ()),
+				  &gfs_bc_joseph_info);
+  }
+
+  return klass;
+}
+/* END NEW SECTION CREATED BY PETER ZHANG */
+/***************************************************************************************************************************/
 
 /**
  * One of the boundaries of a #GfsBox.

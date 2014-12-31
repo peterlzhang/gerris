@@ -149,7 +149,13 @@ GtsObjectClass ** gfs_classes (void)
     gfs_bc_angle_class (),
   gfs_bc_navier_class (),
   gfs_bc_flather_class (),
+/**************************************************************************************************************************/
+/* BEGIN ADDITION BY PETER ZHANG */
 
+  gfs_bc_joseph_class (),
+
+/* END ADDITION BY PETER ZHANG */
+/**************************************************************************************************************************/
   gfs_boundary_class (),
     gfs_boundary_inflow_constant_class (),
     gfs_boundary_outflow_class (),
